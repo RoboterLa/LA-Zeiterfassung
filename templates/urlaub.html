@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urlaubsübersicht</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Menüleiste wie auf den anderen Seiten -->
+    <header class="bg-[#0066b3] shadow-lg">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="logo-container flex items-center">
+                <img src="https://lackner-aufzuege-gmbh.com/wp-content/uploads/2021/09/cropped-2205_lackner_r.png" alt="Lackner Aufzüge Logo" style="height:48px;">
+            </div>
+            <div class="flex items-center">
+                <div class="text-white text-sm mr-4 hidden md:block">
+                    <span id="current-date" class="mr-2">{{ today }}</span>
+                    <span id="current-time"></span>
+                </div>
+                <div class="relative mr-4">
+                    <button id="notification-bell" class="focus:outline-none">
+                        <svg class="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        {% if pending_count > 0 %}
+                        <span class="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5 border-2 border-white">{{ pending_count }}</span>
+                        {% endif %}
+                    </button>
+                    <div id="notification-dropdown" class="hidden absolute right-0 mt-2 w-72 bg-white rounded-md shadow-lg py-2 z-20">
+                        <a href="{{ url_for('approve_entries') }}" class="block px-4 py-3 text-gray-800 hover:bg-gray-100 cursor-pointer">
+                            {% if pending_count > 0 %}
+                            <span class="font-semibold">Es gibt {{ pending_count }} Zeiteinträge, die genehmigt werden müssen.</span>
+                            {% else %}
+                            <span>Keine neuen Benachrichtigungen.</span>
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+                <div class="relative">
+                    <button id="burger-menu-button" class="ml-2 flex items-center text-white focus:outline-none" aria-label="Menü öffnen">
+                        <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <div id="burger-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-30">
+                        <a href="{{ url_for('dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Startseite</a>
+                        <a href="{{ url_for('approve_entries') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Zeiteinträge genehmigen</a>
+                        <a href="{{ url_for('urlaub') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Urlaubsübersicht</a>
+                        <a href="{{ url_for('arbeitszeit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Arbeitszeit</a>
+                        <a href="{{ url_for('manage_users') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Benutzerverwaltung</a>
+                        <a href="{{ url_for('meine_auftraege') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Meine Aufträge heute</a>
+                        <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Abmelden</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <main class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-lg font-bold lackner-blue-text mb-4">Neuen Urlaub eintragen</h2>
+            <form method="post" class="flex flex-wrap gap-4 items-end" id="urlaub-form">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Startdatum</label>
+                    <input type="date" name="start" id="start-date" required class="form-input px-3 py-2 border border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Enddatum</label>
+                    <input type="date" name="end" id="end-date" required class="form-input px-3 py-2 border border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Kommentar</label>
+                    <input type="text" name="comment" class="form-input px-3 py-2 border border-gray-300 rounded-md">
+                </div>
+                <button type="submit" class="bg-[#0066b3] hover:bg-[#005a9e] text-white font-semibold px-6 py-2 rounded ml-4">Eintragen</button>
+            </form>
+            <div class="mt-2 text-sm text-gray-600">
+                <span>Verbraucht: <b>{{ tage_verbraucht }}</b> Tage, Verplant: <b>{{ tage_verplant }}</b> Tage, Übrig: <b id="tage-uebrig">{{ tage_uebrig }}</b> Tage</span>
+                <span id="urlaub-warning" class="text-red-600 ml-4"></span>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h3 class="font-semibold mb-2">Meine Urlaube:</h3>
+            <div id="urlaub-edit-warning" class="mb-4 text-sm text-yellow-700 bg-yellow-100 border-l-4 border-yellow-400 p-3 rounded hidden">
+                Bereits begonnene oder vergangene Urlaubstage können nicht mehr geändert werden. Wende dich an deinen Vorgesetzten, falls eine Korrektur nötig ist.
+            </div>
+            <table class="min-w-full text-sm">
+                <thead>
+                    <tr class="bg-gray-50">
+                        <th class="px-2 py-2 text-left">Start</th>
+                        <th class="px-2 py-2 text-left">Ende</th>
+                        <th class="px-2 py-2 text-left">Kommentar</th>
+                        <th class="px-2 py-2 text-left">Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for urlaub in urlaube %}
+                    <tr class="border-b align-top">
+                        {% if urlaub.editing %}
+                        <form method="post" class="contents">
+                            <input type="hidden" name="edit_id" value="{{ urlaub.id }}">
+                            <td><input type="date" name="start" value="{{ urlaub.start }}" required class="form-input px-2 py-1 border border-gray-300 rounded-md"></td>
+                            <td><input type="date" name="end" value="{{ urlaub.end }}" required class="form-input px-2 py-1 border border-gray-300 rounded-md"></td>
+                            <td><input type="text" name="comment" value="{{ urlaub.comment }}" class="form-input px-2 py-1 border border-gray-300 rounded-md"></td>
+                            <td>
+                                <button type="submit" class="bg-[#0066b3] hover:bg-[#005a9e] text-white font-semibold px-4 py-1 rounded">Speichern</button>
+                                <a href="{{ url_for('urlaub') }}" class="ml-2 text-gray-500 hover:underline">Abbrechen</a>
+                                {% if urlaub.start < today and urlaub.end >= today %}
+                                <div class="text-xs text-gray-500 mt-1">Nur zukünftige Tage können noch geändert werden.</div>
+                                {% endif %}
+                            </td>
+                        </form>
+                        {% else %}
+                        <td>{{ urlaub.start | date_de }}</td>
+                        <td>{{ urlaub.end | date_de }}</td>
+                        <td>{{ urlaub.comment }}</td>
+                        <td>
+                            {% if urlaub.is_past %}
+                                <span class="text-gray-500">Genommen</span>
+                                <a href="mailto:supervisor@lackner-aufzuege.com?subject=Korrektur%20Urlaub%20{{ urlaub.start | date_de }}%20bis%20{{ urlaub.end | date_de }}&body=Sehr%20geehrte%20Damen%20und%20Herren,%0Aich%20bitte%20um%20Korrektur%20meines%20Urlaubs%20vom%20{{ urlaub.start | date_de }}%20bis%20{{ urlaub.end | date_de }}.%0A%0AMit%20freundlichen%20Gr%C3%BC%C3%9Fen" class="ml-2 text-blue-600 hover:underline" title="Supervisor kontaktieren">Supervisor kontaktieren</a>
+                            {% else %}
+                                <form method="post" style="display:inline;">
+                                    <input type="hidden" name="edit" value="{{ urlaub.id }}">
+                                    <button type="submit" class="ml-2 text-blue-600 hover:underline">Bearbeiten</button>
+                                </form>
+                                <form method="post" style="display:inline;">
+                                    <input type="hidden" name="delete" value="{{ urlaub.id }}">
+                                    <button type="submit" class="ml-2 text-red-600 hover:underline">Löschen</button>
+                                </form>
+                                {% if urlaub.start < today and urlaub.end >= today %}
+                                <div class="text-xs text-gray-500 mt-1">Nur zukünftige Tage können noch geändert werden.</div>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-lg font-bold lackner-blue-text mb-4">Jahresübersicht</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for month in year_calendar %}
+                <div class="border rounded-lg p-2 bg-gray-50">
+                    <div class="font-semibold text-center mb-1">{{ month.name }}</div>
+                    <table class="w-full text-center text-xs">
+                        <thead>
+                            <tr>
+                                <th>Mo</th><th>Di</th><th>Mi</th><th>Do</th><th>Fr</th><th>Sa</th><th>So</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for week in month.weeks %}
+                            <tr>
+                                {% for day in week %}
+                                <td class="p-1 
+                                    {% if day.is_holiday and day.is_feiertag %}bg-green-200 border-2 border-yellow-300{% elif day.is_holiday %}bg-green-200{% elif day.is_feiertag %}bg-yellow-200{% elif day.is_weekend %}text-gray-400{% endif %}
+                                    {% if not day.in_month %}text-gray-300{% endif %}">
+                                    {{ day.day }}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <!-- Legende unter dem Kalender -->
+        <div class="mt-4 flex flex-wrap gap-6 items-center">
+            {% for eintrag in legende %}
+            <div class="flex items-center gap-2">
+                <span class="inline-block w-5 h-5 rounded {{ eintrag.farbe }} border"></span>
+                <span class="text-sm">{{ eintrag.text }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+    <script>
+    // Urlaubslänge prüfen
+    document.getElementById('urlaub-form').addEventListener('submit', function(e) {
+        const start = document.getElementById('start-date').value;
+        const end = document.getElementById('end-date').value;
+        const tageUebrig = parseInt(document.getElementById('tage-uebrig').textContent);
+        if (start && end) {
+            const startDate = new Date(start);
+            const endDate = new Date(end);
+            const diff = Math.floor((endDate - startDate) / (1000*60*60*24)) + 1;
+            if (diff > tageUebrig) {
+                e.preventDefault();
+                document.getElementById('urlaub-warning').textContent = 'Du kannst nicht mehr Urlaub eintragen als du übrig hast!';
+            } else {
+                document.getElementById('urlaub-warning').textContent = '';
+            }
+        }
+    });
+    // Notification Center Dropdown
+    const bell = document.getElementById('notification-bell');
+    const notifDropdown = document.getElementById('notification-dropdown');
+    if (bell && notifDropdown) {
+        bell.addEventListener('click', function(e) {
+            e.stopPropagation();
+            notifDropdown.classList.toggle('hidden');
+        });
+        document.addEventListener('click', function(e) {
+            if (!notifDropdown.classList.contains('hidden') && !notifDropdown.contains(e.target) && e.target !== bell) {
+                notifDropdown.classList.add('hidden');
+            }
+        });
+    }
+    // Burger-Menü Dropdown
+    const burgerBtn = document.getElementById('burger-menu-button');
+    const burgerDropdown = document.getElementById('burger-dropdown');
+    if (burgerBtn && burgerDropdown) {
+        burgerBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            burgerDropdown.classList.toggle('hidden');
+        });
+        document.addEventListener('click', function(e) {
+            if (!burgerDropdown.classList.contains('hidden') && !burgerDropdown.contains(e.target) && e.target !== burgerBtn) {
+                burgerDropdown.classList.add('hidden');
+            }
+        });
+    }
+    // Warnung beim Bearbeiten, wenn Datum <= heute
+    function showEditWarningIfPast(input) {
+        const today = new Date().toISOString().slice(0,10);
+        const start = document.querySelector('input[name="start"]:not(#start-date)');
+        const end = document.querySelector('input[name="end"]:not(#end-date)');
+        const warn = document.getElementById('urlaub-edit-warning');
+        if (start && end && warn) {
+            if (start.value <= today || end.value <= today) {
+                warn.classList.remove('hidden');
+            } else {
+                warn.classList.add('hidden');
+            }
+        }
+    }
+    document.querySelectorAll('input[name="start"]:not(#start-date), input[name="end"]:not(#end-date)').forEach(inp => {
+        inp.addEventListener('change', function() { showEditWarningIfPast(this); });
+        // Initial check
+        showEditWarningIfPast(inp);
+    });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Zeiterfassung</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-md w-96">
+        <div class="text-center mb-8">
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">Zeiterfassung</h1>
+            <p class="text-gray-600">Bitte melden Sie sich an</p>
+        </div>
+        
+        <div class="space-y-4">
+            <a href="{{ url_for('login_ms365') }}" 
+               class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center transition duration-200">
+                <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zM24 11.4H12.6V0H24v11.4z"/>
+                </svg>
+                Mit Microsoft 365 anmelden
+            </a>
+        </div>
+        
+        <div class="mt-8 text-center text-sm text-gray-500">
+            <p>Sie werden zu Microsoft weitergeleitet</p>
+        </div>
+    </div>
+</body>
+</html> 

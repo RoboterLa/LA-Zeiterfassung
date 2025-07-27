@@ -1,0 +1,8 @@
+id,start,stop,dauer,notdienstwoche,quelle,bemerkung
+d6779d4a-47bb-4a73-a894-14fe2166b134,2025-07-12T09:19,2025-07-12T11:19,02:00,1,manuell,Test
+d32e0879-0604-40ff-8798-f5ffd45901b1,09:00,10:00,1:00,0,manuell,Hart gearbeitet
+b5930100-f95e-4b63-beac-ac3878b3b088,09:00,10:00,1:00,0,manuell,Hart gearbeitet
+06464275-08a2-4577-b991-6e6f19b74e27,09:00,10:00,1:00,0,manuell,Hart gearbeitet
+202cdf73-72f9-4630-814e-821b0eefdbc8,09:00,10:00,1:00,0,manuell,Hart gearbeitet
+83cf40dc-1ad3-4c59-900c-3e7b7f85f619,09:00,10:00,1:00,0,manuell,Hart gearbeitet
+45adb4e4-d50e-4c2d-b3fc-66545a7b978f,10:02,10:03,0:01,0,manuell,sehr hart gearbeitet

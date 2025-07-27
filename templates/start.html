@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Neuen Zeiteintrag starten</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Neuen Zeiteintrag starten</h1>
+    <form method="post">
+        <label>Auftrag/Kunde:<br>
+            <input type="text" name="auftrag" required>
+        </label><br><br>
+        <label>Notiz:<br>
+            <input type="text" name="notiz">
+        </label><br><br>
+        <button type="submit">Starten</button>
+        <a href="{{ url_for('dashboard') }}">Abbrechen</a>
+    </form>
+</body>
+</html> 

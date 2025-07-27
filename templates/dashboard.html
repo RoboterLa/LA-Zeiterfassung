@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="bg-gray-100 min-h-screen">
+{% set min_left = None %}
+{% if verbleibende_zeit and ':' in verbleibende_zeit %}
+  {% set _h = verbleibende_zeit.split(':')[0] %}
+  {% set _m = verbleibende_zeit.split(':')[1].split('h')[0] %}
+  {% set min_left = (_h|int) * 60 + (_m|int) %}
+{% endif %}
+    <header class="bg-[#0066b3] shadow-lg">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="logo-container flex items-center">
+                <img src="https://lackner-aufzuege-gmbh.com/wp-content/uploads/2021/09/cropped-2205_lackner_r.png" alt="Lackner Aufzüge Logo" style="height:48px;">
+            </div>
+            <div class="flex items-center">
+                <div class="text-white text-sm mr-4 hidden md:block">
+                    <span id="current-date" class="mr-2">{{ today }}</span>
+                    <span id="current-time"></span>
+                </div>
+                <div class="relative mr-4">
+                    <button id="notification-bell" class="focus:outline-none">
+                        <svg class="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        {% if pending_count > 0 %}
+                        <span class="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5 border-2 border-white">{{ pending_count }}</span>
+                        {% endif %}
+                    </button>
+                    <div id="notification-dropdown" class="hidden absolute right-0 mt-2 w-72 bg-white rounded-md shadow-lg py-2 z-20">
+                        <a href="{{ url_for('approve_entries') }}" class="block px-4 py-3 text-gray-800 hover:bg-gray-100 cursor-pointer">
+                            {% if pending_count > 0 %}
+                            <span class="font-semibold">Es gibt {{ pending_count }} Zeiteinträge, die genehmigt werden müssen.</span>
+                            {% else %}
+                            <span>Keine neuen Benachrichtigungen.</span>
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+                <div class="relative">
+                    <button id="burger-menu-button" class="ml-2 flex items-center text-white focus:outline-none" aria-label="Menü öffnen">
+                        <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <div id="burger-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-30">
+                        <a href="{{ url_for('dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Dashboard</a>
+                        <a href="{{ url_for('zeiterfassung') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Zeiterfassung</a>
+                        <a href="{{ url_for('approve_entries') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Zeiteinträge genehmigen</a>
+                        <a href="{{ url_for('urlaub') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Urlaubsübersicht</a>
+                        <a href="{{ url_for('manage_users') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Benutzerverwaltung</a>
+                        <a href="{{ url_for('meine_auftraege') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Meine Aufträge heute</a>
+                        <a href="{{ url_for('arbeitszeit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Arbeitszeit</a>
+                        <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Abmelden</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <main class="container mx-auto px-4 py-8">
+        <!-- Begrüßung oben -->
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold mb-2">Guten Tag, {{ user_fullname }}</h1>
+        </div>
+        <!-- Meine Aufträge heute Kachel: als zweite Kachel, volle Breite -->
+        <div class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+            {% if stoerungen %}
+            <!-- Störungen Kacheln -->
+            {% for stoerung in stoerungen %}
+            <div class="stoerung-kachel bg-red-100 border-l-8 border-red-600 rounded-lg shadow-md p-8 flex flex-col justify-center relative animate-pulse mb-4" data-stoerung-id="{{ loop.index0 }}">
+                <div class="flex items-center mb-2 stoerung-header">
+                    <svg class="h-8 w-8 text-red-600 mr-2 stoerung-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 5a7 7 0 100 14 7 7 0 000-14z"/></svg>
+                    <span class="text-red-700 text-lg font-bold stoerung-label">Störung!</span>
+                    <span class="hidden erledigt-label text-green-700 text-lg font-bold ml-2">
+                        <svg class="h-8 w-8 text-green-600 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Erledigt
+                        <button class="ml-4 px-2 py-1 bg-green-200 hover:bg-yellow-300 text-green-900 hover:text-yellow-900 rounded text-xs rueckgaengig-btn" title="Rückgängig" data-stoerung-id="{{ loop.index0 }}">
+                            <svg class="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg> Rückgängig
+                        </button>
+                    </span>
+                </div>
+                <div class="text-xl font-extrabold mb-2 text-red-900 stoerung-art">{{ stoerung.art }}</div>
+                <div class="text-base text-gray-700 mb-1"><span class="font-semibold">Adresse:</span> {{ stoerung.adresse }}</div>
+                <div class="text-base text-gray-700 mb-1"><span class="font-semibold">Bis:</span> {{ stoerung.deadline }}</div>
+                <div class="mt-4 flex gap-4 items-center">
+                    <a href="https://www.google.com/maps/dir/?api=1&destination={{ stoerung.coords[0] }},{{ stoerung.coords[1] }}" target="_blank" rel="noopener" class="inline-block bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded text-lg stoerung-nav">Navigation starten</a>
+                    <button class="stoerung-done-btn bg-gray-300 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded flex items-center gap-2 transition-colors" data-stoerung-id="{{ loop.index0 }}">
+                        <span class="icon-done hidden"><svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></span>
+                        <span class="icon-undone">Als erledigt markieren</span>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+            <!-- Meine Aufträge heute Kachel -->
+            <div class="bg-white rounded-lg shadow-md p-8 flex flex-col justify-center">
+                <div class="flex items-center mb-2">
+                    <svg class="h-8 w-8 text-blue-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 014-4h2a4 4 0 014 4v2M9 17H7a4 4 0 01-4-4V7a4 4 0 014-4h10a4 4 0 014 4v6a4 4 0 01-4 4h-2M9 17v2a2 2 0 002 2h2a2 2 0 002-2v-2"/></svg>
+                    <span class="text-gray-500 text-lg">Meine Aufträge heute</span>
+                </div>
+                <div class="text-5xl font-extrabold mb-2 text-blue-900">{% if auftraege_offen is not none %}{{ auftraege_offen }}{% endif %}</div>
+                <div class="text-base text-gray-700 mb-1">noch zu erledigen</div>
+                <div class="text-sm text-gray-600 mb-2">
+                    {% if auftraege_erledigt is not none %}Erledigt: <span class="font-semibold">{{ auftraege_erledigt }}</span>{% endif %}
+                    {% if auftraege_offen is not none and auftraege_erledigt is not none %} &nbsp;|&nbsp; {% endif %}
+                    {% if auftraege_offen is not none and auftraege_erledigt is not none %}Gesamt: <span class="font-semibold">{{ auftraege_offen + auftraege_erledigt }}</span>{% endif %}
+                </div>
+                <ul class="text-xs text-gray-700 space-y-1 mt-2">
+                    {% for art, info in auftragsarten.items() %}
+                        <li><span class="font-semibold">{{ art }}:</span> Erledigt: <span class="text-green-700 font-semibold">{{ info.gesamt - info.offen }}</span>  |  Offen: <span class="text-blue-700 font-semibold">{{ info.offen }}</span></li>
+                    {% endfor %}
+                </ul>
+                <div class="mt-4 md:mt-8">
+                    <a href="{{ url_for('meine_auftraege') }}" class="inline-block bg-[#0066b3] hover:bg-[#005a9e] text-white font-semibold px-6 py-3 rounded text-lg">Zu meinen Aufträgen</a>
+                </div>
+            </div>
+            <!-- Nächster Auftrag Kachel -->
+            {% if naechster_auftrag_coords %}
+            <div id="naechster-auftrag-kachel" class="bg-white rounded-lg shadow-md p-8 flex flex-col justify-center items-start relative overflow-hidden">
+                <div class="flex items-center mb-2">
+                    <svg class="h-8 w-8 text-blue-700 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2a4 4 0 014-4h2a4 4 0 014 4v2M9 17H7a4 4 0 01-4-4V7a4 4 0 014-4h10a4 4 0 014 4v6a4 4 0 01-4 4h-2M9 17v2a2 2 0 002 2h2a2 2 0 002-2v-2"/></svg>
+                    <span class="text-gray-500 text-lg font-semibold">Nächster Auftrag</span>
+                </div>
+                <div id="naechster-auftrag-uhrzeit" class="text-5xl font-extrabold mb-2 text-blue-900">{{ naechster_auftrag_uhrzeit }}</div>
+                <div class="text-base text-gray-700 mb-1">Startzeit</div>
+                <div class="text-sm text-gray-600 mb-2">
+                    <span class="font-semibold">Art:</span> {{ naechster_auftrag_art }}<br/>
+                    <span class="font-semibold">Standort:</span> {{ naechster_auftrag_standort }}
+                </div>
+                <div class="text-xs text-gray-500 mt-2">
+                  Verbleibende Zeit:
+                  <span class="font-semibold {% if min_left is not none and min_left < 30 %}text-red-600 animate-pulse{% endif %}" title="Nächster Auftrag um {{ naechster_auftrag_uhrzeit if naechster_auftrag_uhrzeit else '' }} Uhr">
+                    {{ verbleibende_zeit if verbleibende_zeit else '–' }}
+                  </span>
+                </div>
+                <a href="https://www.google.com/maps/dir/?api=1&destination={{ naechster_auftrag_coords[0] }},{{ naechster_auftrag_coords[1] }}" target="_blank" rel="noopener" class="mt-4 inline-block bg-[#0066b3] hover:bg-[#005a9e] text-white font-semibold px-6 py-3 rounded text-lg">Navigation starten</a>
+                <button id="firework-btn" class="mt-4 bg-yellow-400 hover:bg-yellow-500 text-black font-bold px-4 py-2 rounded shadow">🎆 Feuerwerk!</button>
+                <canvas id="firework-canvas" class="absolute inset-0 pointer-events-none" style="display:none;z-index:10;"></canvas>
+            </div>
+            {% endif %}
+            <!-- Arbeitszeit Kachel -->
+            <div class="bg-white rounded-lg shadow-md p-8 flex flex-col md:flex-row justify-between items-start gap-8">
+                <div class="flex-1 flex flex-col items-start">
+                    <div class="flex items-center mb-2">
+                        <svg class="h-8 w-8 text-blue-700 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 17v-2a4 4 0 014-4h0a4 4 0 014 4v2"/></svg>
+                        <span class="text-gray-500 text-lg font-semibold">Arbeitszeit</span>
+                    </div>
+                    <div id="arbeitszeit-aktuell" class="text-4xl font-extrabold mb-2 text-blue-900">0:00:00h</div>
+                    <div class="flex gap-4 mb-4">
+                        <button id="arbeitszeit-start" class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded text-lg">Start</button>
+                        <button id="arbeitszeit-stop" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded text-lg">Stop</button>
+                    </div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <input type="checkbox" id="notdienstwoche-check" class="h-5 w-5 text-blue-600 border-gray-300 rounded">
+                        <label for="notdienstwoche-check" class="text-sm text-gray-700">Notdienstwoche</label>
+                    </div>
+                    <div id="arbeitszeit-warnung" class="hidden text-red-600 font-bold mt-2">Achtung: In 30 Minuten ist die maximale Arbeitszeit (8,5h) erreicht!</div>
+                </div>
+                <div class="flex-1 flex flex-col items-start md:items-end mt-6 md:mt-0">
+                    <div class="bg-gray-50 rounded-lg p-4 w-full md:w-72">
+                        <div class="flex flex-col gap-1 mb-2">
+                            <div class="text-xs text-gray-500" id="arbeitszeit-datum-rechts"></div>
+                            <div class="text-xs text-gray-500" id="arbeitszeit-notdienst-status-rechts"></div>
+                        </div>
+                        <div class="text-xs text-gray-500 mb-1">Zusammenfassung</div>
+                        <ul id="arbeitszeit-historie" class="text-xs text-gray-700 mb-1"></ul>
+                        <div class="flex justify-between text-sm"><span>Arbeitszeit gesamt:</span> <span id="arbeitszeit-summe">0:00h</span></div>
+                        <div class="flex justify-between text-sm"><span>Pausenzeit gesamt:</span> <span id="arbeitszeit-pause">0:00h</span></div>
+                        <div class="flex justify-between text-sm mt-1"><span>Geplantes Ende (8,5h):</span> <span id="arbeitszeit-endzeit">–</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Hauptbereich: Tageszusammenfassung, Wetter, Zeiteinträge, Urlaub -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Mein Tag (Tageszusammenfassung) -->
+            <div class="flex-1">
+                <div class="bg-white rounded-lg shadow-md p-6 h-full flex flex-col justify-between">
+                    <div class="flex items-center mb-2">
+                        <svg class="h-6 w-6 text-green-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3"/></svg>
+                        <h2 class="text-lg font-semibold">Tageszusammenfassung</h2>
+                    </div>
+                    <ul class="mb-2">
+                        <li><span class="font-medium">Benachrichtigungen:</span> {% if pending_count > 0 %}<span class="text-red-600 font-bold">{{ pending_count }} offene Genehmigungen</span>{% else %}Keine neuen Benachrichtigungen.{% endif %}</li>
+                        <li><span class="font-medium">Offene Aufgaben:</span> {{ offene_zeiteintraege|length }} offene Zeiteinträge</li>
+                        <li><span class="font-medium">Anstehende Urlaube:</span> {% set upcoming = urlaube|selectattr('start', '>=', today_dt.isoformat())|list %}{{ upcoming|length }} geplant</li>
+                    </ul>
+                    <div class="bg-blue-50 rounded p-3 mt-2 text-sm text-blue-900">
+                        <div class="font-semibold mb-1">Meine Aufträge heute</div>
+                        <div>Erledigt: <span class="font-semibold">{{ auftraege_erledigt if auftraege_erledigt is not none else '' }}</span> &nbsp;|&nbsp;
+                            Offen: <span class="font-semibold">{{ auftraege_offen if auftraege_offen is not none else '' }}</span></div>
+                        <div>Nächster Auftrag: <span class="font-semibold">{{ naechster_auftrag_uhrzeit if naechster_auftrag_uhrzeit else '' }}</span></div>
+                        <div>Verbleibende Zeit: <span class="font-semibold">{{ verbleibende_zeit if verbleibende_zeit else '' }}</span></div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-auto">Letzte Aktualisierung: <span id="current-date"></span> <span id="current-time"></span></div>
+                </div>
+            </div>
+            <!-- Wetter-Kachel auf gleiche Höhe wie Mein Tag -->
+            <div class="w-full md:w-80 flex-shrink-0">
+                <div class="bg-white rounded-lg shadow-md p-6 h-full flex flex-col items-center justify-between" style="min-height: 100%;">
+                    <div class="flex items-center mb-2">
+                        <svg class="h-6 w-6 text-yellow-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 4v4l3 3"/></svg>
+                        <h2 class="text-lg font-semibold">Wetter am Standort</h2>
+                    </div>
+                    <div id="weather-widget" class="flex flex-col items-center">
+                        <div id="weather-location" class="font-medium mb-1">{{ user.location if user and user.location else 'Ort nicht gesetzt' }}</div>
+                        <div id="weather-temp" class="text-3xl font-bold">{{ weather_temp if weather_temp else '--°C' }}</div>
+                        <div id="weather-desc" class="text-sm text-gray-600 mb-2">{{ weather_desc if weather_desc else 'Wetterdaten nicht verfügbar' }}</div>
+                        <img id="weather-icon" src="{{ weather_icon if weather_icon else '' }}" alt="" class="h-12 w-12" {% if not weather_icon %}style="display:none;"{% endif %}>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Kleinere Kacheln darunter -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Offene Zeiteinträge -->
+            <div class="bg-white rounded-lg shadow-md p-6 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center mb-2"><svg class="h-6 w-6 text-blue-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 014-4h2a4 4 0 014 4v2M9 17H7a4 4 0 01-4-4V7a4 4 0 014-4h10a4 4 0 014 4v6a4 4 0 01-4 4h-2M9 17v2a2 2 0 002 2h2a2 2 0 002-2v-2"/></svg><span class="text-gray-500 text-sm">Offene Zeiteinträge</span></div>
+                    <div class="text-3xl font-bold mb-2">{{ offene_zeiteintraege|length }}</div>
+                    <ul class="text-xs text-gray-700 space-y-1">
+                        {% for e in offene_zeiteintraege %}
+                        <li class="flex items-center gap-2">
+                            <svg class="h-4 w-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" stroke-width="2"/></svg>
+                            <span class="font-semibold">{{ e.start }}</span>
+                            <span class="">{{ e.auftrag }}</span>
+                            <span class="text-gray-400 ml-auto">{{ e.location if e.location is defined else '' }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <a href="{{ url_for('zeiterfassung') }}" class="mt-4 inline-block bg-[#0066b3] hover:bg-[#005a9e] text-white font-semibold px-4 py-2 rounded">Zur Zeiterfassung</a>
+            </div>
+            <!-- Letzte Zeiteinträge -->
+            <div class="bg-white rounded-lg shadow-md p-6 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center mb-2"><svg class="h-6 w-6 text-purple-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v4a1 1 0 001 1h3m10-5v4a1 1 0 01-1 1h-3m-4 4h4m-2 0v2m0-2v-2"/></svg><span class="text-gray-500 text-sm">Letzte Zeiteinträge</span></div>
+                    <ul class="text-xs text-gray-700 mb-2 space-y-1">
+                        {% for e in letzte_zeiteintraege %}
+                        <li class="flex items-center gap-2">
+                            <svg class="h-4 w-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" stroke-width="2"/></svg>
+                            <span class="font-semibold">{{ e.start }}</span>
+                            <span class="">{{ e.auftrag }}</span>
+                            <span class="text-gray-400 ml-auto">{{ e.location if e.location is defined else '' }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <a href="{{ url_for('zeiterfassung') }}" class="mt-4 inline-block bg-[#0066b3] hover:bg-[#005a9e] text-white font-semibold px-4 py-2 rounded">Alle Zeiteinträge</a>
+            </div>
+            <!-- Resturlaub -->
+            <div class="bg-white rounded-lg shadow-md p-6 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center mb-2"><svg class="h-6 w-6 text-green-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a5 5 0 00-10 0v2a5 5 0 0010 0zm-2 4v2a3 3 0 01-6 0v-2"/></svg><span class="text-gray-500 text-sm">Resturlaub</span></div>
+                    <div class="text-3xl font-bold mb-2">{{ resturlaub if resturlaub is not none else '' }}</div>
+                    <div class="text-xs text-gray-700">
+                        {% if tage_verbraucht is not none %}Verbraucht: <span class="font-semibold">{{ tage_verbraucht }}</span><br>{% endif %}
+                        {% if tage_verplant is not none %}Geplant: <span class="font-semibold">{{ tage_verplant }}</span><br>{% endif %}
+                        {% if tage_uebrig is not none %}Übrig: <span class="font-semibold">{{ tage_uebrig }}</span><br>{% endif %}
+                        {% if aktueller_urlaub %}Aktueller Urlaub: <span class="font-semibold">{{ aktueller_urlaub.start|default('') }} bis {{ aktueller_urlaub.end|default('') }}</span><br>{% endif %}
+                        {% if naechster_urlaub %}Nächster Urlaub: <span class="font-semibold">{{ naechster_urlaub.start|default('') }} bis {{ naechster_urlaub.end|default('') }}</span>{% endif %}
+                    </div>
+                </div>
+                <a href="{{ url_for('urlaub') }}" class="mt-4 inline-block bg-[#0066b3] hover:bg-[#005a9e] text-white font-semibold px-4 py-2 rounded">Zur Urlaubsübersicht</a>
+            </div>
+        </div>
+        <!-- Dino Game Kachel -->
+        <div class="bg-white rounded-lg shadow-md p-8 flex flex-col items-center justify-center mb-8" style="max-width:420px;margin:auto;">
+            <h2 class="text-xl font-bold mb-2">Dino-Game</h2>
+            <div id="dino-game-container" style="position:relative;width:380px;height:120px;background:#f8fafc;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px #0001;">
+                <canvas id="dino-game-canvas" width="380" height="120" style="display:block;"></canvas>
+                <div id="dino-game-score" style="position:absolute;top:8px;right:16px;font-weight:bold;font-size:1.1em;color:#333;">0</div>
+                <div id="dino-game-tap" style="position:absolute;bottom:8px;left:0;width:100%;text-align:center;color:#aaa;font-size:0.9em;user-select:none;">Klick oder Tippen zum Springen</div>
+            </div>
+        </div>
+    </main>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+    // Wetter-Widget (OpenWeatherMap, Demo für München)
+    document.addEventListener('DOMContentLoaded', function() {
+        const apiKey = 'DEIN_API_KEY'; // OpenWeatherMap API Key hier eintragen
+        const city = 'München,de';
+        fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric&lang=de`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('weather-location').textContent = data.name;
+                document.getElementById('weather-temp').textContent = Math.round(data.main.temp) + '°C';
+                document.getElementById('weather-desc').textContent = data.weather[0].description;
+                document.getElementById('weather-icon').src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
+                document.getElementById('weather-icon').style.display = 'block';
+            })
+            .catch(() => {
+                document.getElementById('weather-desc').textContent = 'Wetterdaten nicht verfügbar.';
+            });
+    });
+    // Notification Center Dropdown
+    const bell = document.getElementById('notification-bell');
+    const notifDropdown = document.getElementById('notification-dropdown');
+    if (bell && notifDropdown) {
+        bell.addEventListener('click', function(e) {
+            e.stopPropagation();
+            notifDropdown.classList.toggle('hidden');
+        });
+        document.addEventListener('click', function(e) {
+            if (!notifDropdown.classList.contains('hidden') && !notifDropdown.contains(e.target) && e.target !== bell) {
+                notifDropdown.classList.add('hidden');
+            }
+        });
+    }
+    // Burger-Menü Dropdown
+    const burgerBtn = document.getElementById('burger-menu-button');
+    const burgerDropdown = document.getElementById('burger-dropdown');
+    if (burgerBtn && burgerDropdown) {
+        burgerBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            burgerDropdown.classList.toggle('hidden');
+        });
+        document.addEventListener('click', function(e) {
+            if (!burgerDropdown.classList.contains('hidden') && !burgerDropdown.contains(e.target) && e.target !== burgerBtn) {
+                burgerDropdown.classList.add('hidden');
+            }
+        });
+    }
+    // Uhrzeit für Tageszusammenfassung
+    function updateDateTime() {
+        const now = new Date();
+        document.getElementById('current-date').textContent = now.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        document.getElementById('current-time').textContent = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    }
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+    </script>
+    {% if naechster_auftrag_coords %}
+    <script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        var el = document.getElementById('mini-map-dashboard');
+        if (el) {
+            var coords = [{{ naechster_auftrag_coords[0]|float }}, {{ naechster_auftrag_coords[1]|float }}];
+            var map = L.map('mini-map-dashboard', {
+                zoomControl: false, 
+                attributionControl: false, 
+                dragging: false, 
+                scrollWheelZoom: false, 
+                doubleClickZoom: false, 
+                boxZoom: false, 
+                keyboard: false, 
+                tap: false, 
+                touchZoom: false
+            });
+            map.setView(coords, 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19}).addTo(map);
+            L.marker(coords).addTo(map);
+            setTimeout(function() { map.invalidateSize(); }, 200);
+        }
+    });
+    </script>
+    {% endif %}
+    <script>
+// Arbeitszeit-Kachel Logik
+const arbeitszeitAktuell = document.getElementById('arbeitszeit-aktuell');
+const arbeitszeitStartBtn = document.getElementById('arbeitszeit-start');
+const arbeitszeitStopBtn = document.getElementById('arbeitszeit-stop');
+const notdienstCheck = document.getElementById('notdienstwoche-check');
+const arbeitszeitWarnung = document.getElementById('arbeitszeit-warnung');
+const arbeitszeitDatum = document.getElementById('arbeitszeit-datum');
+const arbeitszeitNotdienstStatus = document.getElementById('arbeitszeit-notdienst-status');
+const arbeitszeitStartzeit = document.getElementById('arbeitszeit-startzeit');
+const arbeitszeitEndzeit = document.getElementById('arbeitszeit-endzeit');
+const arbeitszeitHistorie = document.getElementById('arbeitszeit-historie');
+const arbeitszeitPause = document.getElementById('arbeitszeit-pause');
+const arbeitszeitDatumRechts = document.getElementById('arbeitszeit-datum-rechts');
+const arbeitszeitNotdienstStatusRechts = document.getElementById('arbeitszeit-notdienst-status-rechts');
+const arbeitszeitSumme = document.getElementById('arbeitszeit-summe');
+let arbeitszeitStart = null;
+let arbeitszeitGesamt = 0; // Sekunden
+let arbeitszeitTimer = null;
+let arbeitszeitEvents = [];
+
+// Hilfsfunktionen für localStorage
+function saveArbeitszeitState() {
+    localStorage.setItem('arbeitszeitStart', arbeitszeitStart ? arbeitszeitStart.toString() : '');
+    localStorage.setItem('arbeitszeitGesamt', arbeitszeitGesamt.toString());
+    localStorage.setItem('arbeitszeitEvents', JSON.stringify(arbeitszeitEvents.map(ev => ({...ev, time: ev.time instanceof Date ? ev.time.toISOString() : ev.time}))));
+}
+function loadArbeitszeitState() {
+    const start = localStorage.getItem('arbeitszeitStart');
+    arbeitszeitStart = start && start !== 'null' && start !== '' ? parseInt(start) : null;
+    arbeitszeitGesamt = parseInt(localStorage.getItem('arbeitszeitGesamt')) || 0;
+    const data = localStorage.getItem('arbeitszeitEvents');
+    if (data) {
+        arbeitszeitEvents = JSON.parse(data).map(ev => ({...ev, time: new Date(ev.time)}));
+    } else {
+        arbeitszeitEvents = [];
+    }
+}
+// Beim Laden der Seite State laden
+loadArbeitszeitState();
+
+function startArbeitszeitTimer() {
+    if (!arbeitszeitTimer) {
+        arbeitszeitTimer = setInterval(updateArbeitszeitAnzeige, 1000);
+    }
+}
+function stopArbeitszeitTimer() {
+    if (arbeitszeitTimer) {
+        clearInterval(arbeitszeitTimer);
+        arbeitszeitTimer = null;
+    }
+}
+function pad2(n) { return n.toString().padStart(2,'0'); }
+function formatTime(dt) {
+    return dt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+}
+function formatDauer(sek) {
+    const h = Math.floor(sek / 3600);
+    const m = Math.floor((sek % 3600) / 60);
+    return `${h}:${pad2(m)}h`;
+}
+function updateArbeitszeitAnzeige() {
+    let sek = arbeitszeitGesamt;
+    if (arbeitszeitStart) {
+        sek += Math.floor((Date.now() - arbeitszeitStart) / 1000);
+    }
+    const h = Math.floor(sek / 3600);
+    const m = Math.floor((sek % 3600) / 60);
+    const s = sek % 60;
+    arbeitszeitAktuell.textContent = `${h}:${pad2(m)}:${pad2(s)}h`;
+    // Warnung 30min vor 8,5h
+    if (sek >= 8*3600 + 1800 && sek < 8.5*3600) {
+        arbeitszeitWarnung.classList.remove('hidden');
+        showNotification && showNotification('Achtung: In 30 Minuten ist die maximale Arbeitszeit (8,5h) erreicht!', 'error');
+    } else {
+        arbeitszeitWarnung.classList.add('hidden');
+    }
+    // Historie und Pausen/Arbeitszeit
+    arbeitszeitHistorie.innerHTML = '';
+    let arbeitszeitSumSek = 0;
+    let pauseSumSek = 0;
+    let lastStart = null;
+    let lastStop = null;
+    for (let i = 0; i < arbeitszeitEvents.length; i++) {
+        const ev = arbeitszeitEvents[i];
+        if (ev.type === 'start') {
+            lastStart = ev.time;
+            // Finde passendes Stop
+            if (arbeitszeitEvents[i+1] && arbeitszeitEvents[i+1].type === 'stop') {
+                const stop = arbeitszeitEvents[i+1].time;
+                const dauer = Math.floor((stop - lastStart) / 1000);
+                arbeitszeitSumSek += dauer;
+                const li = document.createElement('li');
+                li.innerHTML = `<span class='font-semibold'>${formatTime(lastStart)} – ${formatTime(stop)}</span> <span class='text-gray-500'>(${formatDauer(dauer)})</span>`;
+                arbeitszeitHistorie.appendChild(li);
+                lastStop = stop;
+                // Pause nach Stop
+                if (arbeitszeitEvents[i+2] && arbeitszeitEvents[i+2].type === 'start') {
+                    const pause = Math.floor((arbeitszeitEvents[i+2].time - stop) / 1000);
+                    pauseSumSek += pause;
+                    const liPause = document.createElement('li');
+                    liPause.innerHTML = `<span class='text-blue-700'>Pause:</span> <span>${formatTime(stop)} – ${formatTime(arbeitszeitEvents[i+2].time)}</span> <span class='text-gray-500'>(${formatDauer(pause)})</span>`;
+                    arbeitszeitHistorie.appendChild(liPause);
+                }
+                i++; // Skip stop event
+            } else if (i === arbeitszeitEvents.length-1 && arbeitszeitStart) {
+                // Laufender Block
+                const now = new Date();
+                const dauer = Math.floor((now - lastStart) / 1000);
+                arbeitszeitSumSek += dauer;
+                const li = document.createElement('li');
+                li.innerHTML = `<span class='font-semibold'>${formatTime(lastStart)} – jetzt</span> <span class='text-gray-500'>(${formatDauer(dauer)})</span>`;
+                arbeitszeitHistorie.appendChild(li);
+                lastStop = now;
+            }
+        }
+    }
+    // Falls ein Block läuft, aber noch kein Event existiert (z.B. nach Reset)
+    if (arbeitszeitEvents.length === 0 && arbeitszeitStart) {
+        const start = new Date(arbeitszeitStart);
+        const now = new Date();
+        const dauer = Math.floor((now - start) / 1000);
+        arbeitszeitSumSek += dauer;
+        const li = document.createElement('li');
+        li.innerHTML = `<span class='font-semibold'>${formatTime(start)} – jetzt</span> <span class='text-gray-500'>(${formatDauer(dauer)})</span>`;
+        arbeitszeitHistorie.appendChild(li);
+        lastStart = start;
+        lastStop = now;
+    }
+    arbeitszeitSumme.textContent = formatDauer(arbeitszeitSumSek);
+    arbeitszeitPause.textContent = formatDauer(pauseSumSek);
+    // Geplantes Ende: Startzeit des ersten Blocks + 8,5h reine Arbeitszeit (abzüglich Pausen)
+    let geplantesEnde = null;
+    if (arbeitszeitEvents.length > 0 && arbeitszeitEvents[0].type === 'start') {
+        let start = arbeitszeitEvents[0].time;
+        let restSek = 8.5*3600;
+        for (let i = 0; i < arbeitszeitEvents.length; i++) {
+            const ev = arbeitszeitEvents[i];
+            if (ev.type === 'start') {
+                let stop = null;
+                if (arbeitszeitEvents[i+1] && arbeitszeitEvents[i+1].type === 'stop') {
+                    stop = arbeitszeitEvents[i+1].time;
+                } else if (i === arbeitszeitEvents.length-1 && arbeitszeitStart) {
+                    stop = new Date();
+                }
+                if (stop) {
+                    const block = Math.floor((stop - ev.time) / 1000);
+                    if (block >= restSek) {
+                        geplantesEnde = new Date(ev.time.getTime() + restSek*1000);
+                        break;
+                    } else {
+                        restSek -= block;
+                    }
+                    i++; // skip stop
+                }
+            }
+        }
+        if (!geplantesEnde && arbeitszeitStart) {
+            geplantesEnde = new Date(Date.now() + restSek*1000);
+        }
+    } else if (arbeitszeitStart) {
+        // Noch keine Events, aber Block läuft
+        geplantesEnde = new Date(arbeitszeitStart + 8.5*3600*1000);
+    }
+    arbeitszeitEndzeit.textContent = geplantesEnde ? formatTime(geplantesEnde) : '–';
+}
+arbeitszeitStartBtn.addEventListener('click', function() {
+    if (!arbeitszeitStart) {
+        arbeitszeitStart = Date.now();
+        arbeitszeitStartzeit.textContent = formatTime(new Date(arbeitszeitStart));
+        const end = new Date(arbeitszeitStart + 8.5*3600*1000);
+        arbeitszeitEndzeit.textContent = formatTime(end);
+        arbeitszeitEvents.push({type: 'start', time: new Date(arbeitszeitStart)});
+        saveArbeitszeitState();
+    }
+    startArbeitszeitTimer();
+    updateArbeitszeitAnzeige();
+});
+arbeitszeitStopBtn.addEventListener('click', function() {
+    if (arbeitszeitStart) {
+        arbeitszeitGesamt += Math.floor((Date.now() - arbeitszeitStart) / 1000);
+        arbeitszeitStart = null;
+        arbeitszeitEvents.push({type: 'stop', time: new Date()});
+        saveArbeitszeitState();
+        stopArbeitszeitTimer();
+        updateArbeitszeitAnzeige();
+    }
+});
+// Timer immer laufen lassen, wenn ein Block aktiv ist
+if (arbeitszeitStart) {
+    startArbeitszeitTimer();
+}
+// updateArbeitszeitAnzeige regelmäßig auch ohne Start/Stop
+setInterval(updateArbeitszeitAnzeige, 1000);
+// Notdienstwoche Checkbox: bleibt bis Sonntag aktiv
+function checkNotdienstAuto() {
+    if (localStorage.getItem('notdienstwoche') === '1') {
+        notdienstCheck.checked = true;
+        arbeitszeitNotdienstStatus.innerHTML = '<span class="text-green-700 font-semibold">Notdienstwoche aktiv</span> <span class="text-xs text-blue-700 cursor-pointer underline" onclick="notdienstCheck.checked=false;localStorage.removeItem(\'notdienstwoche\');arbeitszeitNotdienstStatus.innerHTML=\'Notdienstwoche deaktiviert\';arbeitszeitNotdienstStatusRechts.innerHTML=\'Notdienstwoche deaktiviert\';">(deaktivieren)</span>';
+        const now = new Date();
+        if (now.getDay() === 0) { // Sonntag
+            localStorage.removeItem('notdienstwoche');
+            notdienstCheck.checked = false;
+            arbeitszeitNotdienstStatus.textContent = 'Notdienstwoche deaktiviert';
+            arbeitszeitNotdienstStatusRechts.textContent = 'Notdienstwoche deaktiviert';
+        }
+    } else {
+        arbeitszeitNotdienstStatus.textContent = 'Notdienstwoche nicht aktiv';
+        arbeitszeitNotdienstStatusRechts.textContent = 'Notdienstwoche nicht aktiv';
+    }
+}
+notdienstCheck.addEventListener('change', function() {
+    if (this.checked) {
+        localStorage.setItem('notdienstwoche', '1');
+    } else {
+        localStorage.removeItem('notdienstwoche');
+    }
+    updateNotdienstStatus();
+});
+function updateArbeitszeitDatum() {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+    arbeitszeitDatumRechts.textContent = dateStr;
+}
+function updateNotdienstStatus() {
+    if (localStorage.getItem('notdienstwoche') === '1') {
+        const html = '<span class="text-green-700 font-semibold">Notdienstwoche aktiv</span> <span class="text-xs text-blue-700 cursor-pointer underline" onclick="notdienstCheck.checked=false;localStorage.removeItem(\'notdienstwoche\');arbeitszeitNotdienstStatusRechts.innerHTML=\'Notdienstwoche deaktiviert\';">(deaktivieren)</span>';
+        arbeitszeitNotdienstStatusRechts.innerHTML = html;
+    } else {
+        arbeitszeitNotdienstStatusRechts.textContent = 'Notdienstwoche nicht aktiv';
+    }
+}
+updateArbeitszeitDatum();
+updateNotdienstStatus();
+updateArbeitszeitAnzeige();
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Störungen erledigen
+    document.querySelectorAll('.stoerung-done-btn').forEach(function(btn) {
+        const id = btn.getAttribute('data-stoerung-id');
+        const key = 'stoerung_done_' + id;
+        const kachel = btn.closest('.stoerung-kachel');
+        const label = kachel.querySelector('.stoerung-label');
+        const erledigtLabel = kachel.querySelector('.erledigt-label');
+        const icon = kachel.querySelector('.stoerung-icon');
+        const art = kachel.querySelector('.stoerung-art');
+        const nav = kachel.querySelector('.stoerung-nav');
+        const rueckBtn = erledigtLabel ? erledigtLabel.querySelector('.rueckgaengig-btn') : null;
+        function updateKachel() {
+            if (localStorage.getItem(key) === '1') {
+                kachel.classList.remove('bg-red-100','border-red-600','animate-pulse');
+                kachel.classList.add('bg-green-100','border-green-600');
+                if (label) label.classList.add('hidden');
+                if (erledigtLabel) erledigtLabel.classList.remove('hidden');
+                if (icon) icon.classList.remove('text-red-600');
+                if (icon) icon.classList.add('text-green-600');
+                if (art) art.classList.remove('text-red-900');
+                if (art) art.classList.add('text-green-900');
+                if (nav) nav.classList.remove('bg-red-600','hover:bg-red-700');
+                if (nav) nav.classList.add('bg-green-600','hover:bg-green-700');
+                btn.classList.remove('bg-gray-300','hover:bg-green-600');
+                btn.classList.add('bg-green-600','hover:bg-green-700','cursor-default');
+                btn.disabled = true;
+                btn.querySelector('.icon-done').classList.remove('hidden');
+                btn.querySelector('.icon-undone').classList.add('hidden');
+                if (rueckBtn) rueckBtn.classList.remove('hidden');
+            } else {
+                kachel.classList.remove('bg-green-100','border-green-600');
+                kachel.classList.add('bg-red-100','border-red-600','animate-pulse');
+                if (label) label.classList.remove('hidden');
+                if (erledigtLabel) erledigtLabel.classList.add('hidden');
+                if (icon) icon.classList.remove('text-green-600');
+                if (icon) icon.classList.add('text-red-600');
+                if (art) art.classList.remove('text-green-900');
+                if (art) art.classList.add('text-red-900');
+                if (nav) nav.classList.remove('bg-green-600','hover:bg-green-700');
+                if (nav) nav.classList.add('bg-red-600','hover:bg-red-700');
+                btn.classList.remove('bg-green-600','hover:bg-green-700','cursor-default');
+                btn.classList.add('bg-gray-300','hover:bg-green-600');
+                btn.disabled = false;
+                btn.querySelector('.icon-done').classList.add('hidden');
+                btn.querySelector('.icon-undone').classList.remove('hidden');
+                if (rueckBtn) rueckBtn.classList.add('hidden');
+            }
+        }
+        updateKachel();
+        btn.addEventListener('click', function() {
+            localStorage.setItem(key, '1');
+            updateKachel();
+        });
+        if (rueckBtn) {
+            rueckBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                localStorage.removeItem(key);
+                updateKachel();
+            });
+        }
+    });
+});
+</script>
+<script>
+(function() {
+    const canvas = document.getElementById('dino-game-canvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('dino-game-score');
+    const tapHint = document.getElementById('dino-game-tap');
+    // Dino
+    const dino = { x: 40, y: 80, w: 28, h: 32, vy: 0, jumping: false };
+    // Boden
+    const groundY = 112;
+    // Hindernisse
+    let obstacles = [];
+    let score = 0;
+    let gameOver = false;
+    let lastObstacle = 0;
+    // Dino-Animation
+    let dinoFrame = 0;
+    // Game Loop
+    function resetGame() {
+        dino.y = 80; dino.vy = 0; dino.jumping = false;
+        obstacles = [];
+        score = 0;
+        gameOver = false;
+        lastObstacle = 0;
+        dinoFrame = 0;
+        scoreEl.textContent = '0';
+        tapHint.style.display = '';
+    }
+    function drawDino() {
+        ctx.save();
+        ctx.translate(dino.x, dino.y);
+        // Körper
+        ctx.fillStyle = '#444';
+        ctx.fillRect(0, 8, dino.w, dino.h-8);
+        // Kopf
+        ctx.fillStyle = '#222';
+        ctx.fillRect(dino.w-10, 0, 12, 12);
+        // Auge
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(dino.w, 4, 2, 2);
+        // Beine (Animation)
+        ctx.fillStyle = '#333';
+        if (!dino.jumping && Math.floor(dinoFrame/6)%2===0) {
+            ctx.fillRect(4, dino.h, 6, 6);
+            ctx.fillRect(dino.w-10, dino.h, 6, 6);
+        } else {
+            ctx.fillRect(4, dino.h+2, 6, 4);
+            ctx.fillRect(dino.w-10, dino.h+2, 6, 4);
+        }
+        ctx.restore();
+    }
+    function drawObstacle(obs) {
+        ctx.save();
+        ctx.translate(obs.x, obs.y);
+        ctx.fillStyle = '#2d7a0b';
+        ctx.fillRect(0, 0, obs.w, obs.h);
+        ctx.restore();
+    }
+    function drawGround() {
+        ctx.fillStyle = '#bbb';
+        ctx.fillRect(0, groundY, canvas.width, 8);
+    }
+    function gameLoop() {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        drawGround();
+        // Dino Physik
+        if (!gameOver) {
+            dinoFrame++;
+            if (dino.jumping) {
+                dino.vy += 0.7;
+                dino.y += dino.vy;
+                if (dino.y >= 80) {
+                    dino.y = 80;
+                    dino.vy = 0;
+                    dino.jumping = false;
+                }
+            }
+            // Hindernisse bewegen
+            for (let obs of obstacles) obs.x -= 4;
+            // Hindernisse entfernen
+            obstacles = obstacles.filter(obs => obs.x+obs.w>0);
+            // Neue Hindernisse
+            if (performance.now() - lastObstacle > 900 + Math.random()*900) {
+                obstacles.push({x:canvas.width, y:88, w:16+Math.random()*12, h:24+Math.random()*10, scored:false});
+                lastObstacle = performance.now();
+            }
+            // Kollision
+            for (let obs of obstacles) {
+                if (!obs.scored && obs.x+dino.w> dino.x && obs.x < dino.x+dino.w && dino.y+dino.h > obs.y) {
+                    gameOver = true;
+                    tapHint.textContent = 'Game Over – Klick/Tab für Neustart';
+                }
+                // Score
+                if (!obs.scored && obs.x+dino.w < dino.x) {
+                    score++;
+                    obs.scored = true;
+                    scoreEl.textContent = score;
+                }
+            }
+        }
+        // Zeichnen
+        drawDino();
+        for (let obs of obstacles) drawObstacle(obs);
+        // Loop
+        requestAnimationFrame(gameLoop);
+    }
+    function jump() {
+        if (gameOver) { resetGame(); return; }
+        if (!dino.jumping) {
+            dino.vy = -11.5;
+            dino.jumping = true;
+            tapHint.style.display = 'none';
+        }
+    }
+    canvas.addEventListener('mousedown', jump);
+    canvas.addEventListener('touchstart', function(e){e.preventDefault();jump();},{passive:false});
+    document.addEventListener('keydown', function(e){if(e.code==='Space'||e.code==='ArrowUp'){jump();}});
+    resetGame();
+    gameLoop();
+})();
+</script>
+</body>
+</html> 

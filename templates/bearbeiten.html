@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Zeiteintrag bearbeiten</title>
+</head>
+<body>
+    <h1>Zeiteintrag bearbeiten</h1>
+    <form method="post">
+        <label>Start (YYYY-MM-DD HH:MM:SS):<br>
+            <input type="text" name="start" value="{{ eintrag.start }}" required>
+        </label><br><br>
+        <label>Ende (YYYY-MM-DD HH:MM:SS):<br>
+            <input type="text" name="ende" value="{{ eintrag.ende }}">
+        </label><br><br>
+        <label>Auftrag/Kunde:<br>
+            <input type="text" name="auftrag" value="{{ eintrag.auftrag }}" required>
+        </label><br><br>
+        <label>Notiz:<br>
+            <input type="text" name="notiz" value="{{ eintrag.notiz }}">
+        </label><br><br>
+        <button type="submit">Speichern</button>
+        <a href="{{ url_for('dashboard') }}">Abbrechen</a>
+    </form>
+</body>
+</html> 

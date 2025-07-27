@@ -1,0 +1,200 @@
+
+
+
+XX
+from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for
+import csv
+import os
+from datetime import datetime, date, timedelta
+import io
+
+app = Flask(__name__)
+
+CSV_FILE = 'zeiterfassung.csv'
+FIELDNAMES = [
+    'id', 'elevator_id', 'location', 'date', 'activity_type', 'other_activity',
+    'start_time', 'end_time', 'emergency_week', 'notes', 'status'
+]
+
+# Dummy-User für das Template
+class DummyUser:
+    initials = 'RL'
+    email = 'robert.lackner@lackner-aufzuege.com'
+    is_admin = True
+    can_approve = True
+user = DummyUser()
+
+def lade_zeiteintraege():
+    if not os.path.exists(CSV_FILE):
+        return []
+    with open(CSV_FILE, newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        return list(reader)
+
+def speichere_zeiteintraege(eintraege):
+    with open(CSV_FILE, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
+        writer.writeheader()
+        writer.writerows(eintraege)
+
+def berechne_dauer(start, end):
+    try:
+        s = datetime.strptime(start, '%H:%M')
+        e = datetime.strptime(end, '%H:%M')
+        if e < s:
+            e += timedelta(days=1)
+        diff = e - s
+        stunden = diff.seconds // 3600
+        minuten = (diff.seconds % 3600) // 60
+        return f"{stunden:02d}:{minuten:02d}"
+    except Exception:
+        return ''
+
+def get_today():
+    return date.today().strftime('%d.%m.%Y')
+
+@app.route('/')
+def index():
+    return render_template('index.html', today=get_today(), user=user)
+
+@app.route('/add_entry', methods=['POST'])
+def add_entry():
+    data = request.get_json()
+    eintraege = lade_zeiteintraege()
+    neue_id = str(max([int(e['id']) for e in eintraege], default=0) + 1)
+    eintrag = {
+        'id': neue_id,
+        'elevator_id': data.get('elevator_id', '').strip(),
+        'location': data.get('location', '').strip(),
+        'date': data.get('entry_date', ''),
+        'activity_type': data.get('activity_type', ''),
+        'other_activity': data.get('other_activity', ''),
+        'start_time': data.get('start_time', ''),
+        'end_time': data.get('end_time', ''),
+        'emergency_week': 'Ja' if data.get('emergency_week') == 'yes' else 'Nein',
+        'notes': data.get('notes', ''),
+        'status': 'pending'
+    }
+    eintraege.append(eintrag)
+    speichere_zeiteintraege(eintraege)
+    return jsonify({'status': 'success', 'message': 'Eintrag gespeichert.'})
+
+@app.route('/entries')
+def entries():
+    eintraege = lade_zeiteintraege()
+    # Filter
+    filter_text = request.args.get('filter_text', '').lower()
+    filter_activity = request.args.get('filter_activity', '')
+    filter_elevator = request.args.get('filter_elevator', '')
+    filter_date_type = request.args.get('filter_date_type', 'all')
+    filter_date_start = request.args.get('filter_date_start', '')
+    filter_date_end = request.args.get('filter_date_end', '')
+    filtered = []
+    for e in eintraege:
+        if filter_text and not (
+            filter_text in e.get('elevator_id', '').lower() or
+            filter_text in e.get('location', '').lower() or
+            filter_text in e.get('notes', '').lower() or
+            filter_text in e.get('activity_type', '').lower() or
+            filter_text in e.get('other_activity', '').lower()
+        ):
+            continue
+        if filter_activity and e.get('activity_type') != filter_activity:
+            continue
+        if filter_elevator and e.get('elevator_id') != filter_elevator:
+            continue
+        # Datumsfilter
+        if filter_date_type == 'today':
+            if e.get('date') != date.today().isoformat():
+                continue
+        elif filter_date_type == 'yesterday':
+            if e.get('date') != (date.today() - timedelta(days=1)).isoformat():
+                continue
+        elif filter_date_type == 'custom':
+            if filter_date_start and e.get('date') < filter_date_start:
+                continue
+            if filter_date_end and e.get('date') > filter_date_end:
+                continue
+        filtered.append(e)
+    # Elevator-IDs für Filter
+    elevator_ids = sorted(set(e['elevator_id'] for e in eintraege if e['elevator_id']))
+    # Format für Tabelle
+    entries = []
+    for e in filtered:
+        activity = e['other_activity'] if e['activity_type'] == 'other' and e['other_activity'] else e['activity_type']
+        entries.append({
+            'id': e['id'],
+            'elevator_id': e['elevator_id'],
+            'location': e['location'],
+            'date': e['date'],
+            'task': activity,
+            'time_range': f"{e['start_time']} - {e['end_time']}",
+            'duration': berechne_dauer(e['start_time'], e['end_time']),
+            'emergency_week': e['emergency_week'],
+            'notes': e['notes'],
+            'status': e.get('status', 'pending')
+        })
+    return jsonify({'entries': entries, 'elevator_ids': elevator_ids})
+
+@app.route('/edit_entry/<id>', methods=['POST'])
+def edit_entry(id):
+    data = request.get_json()
+    eintraege = lade_zeiteintraege()
+    found = False
+    for e in eintraege:
+        if e['id'] == id:
+            e['elevator_id'] = data.get('elevator_id', '').strip()
+            e['location'] = data.get('location', '').strip()
+            e['date'] = data.get('entry_date', '')
+            e['activity_type'] = data.get('activity_type', '')
+            e['other_activity'] = data.get('other_activity', '')
+            e['start_time'] = data.get('start_time', '')
+            e['end_time'] = data.get('end_time', '')
+            e['emergency_week'] = 'Ja' if data.get('emergency_week') == 'yes' else 'Nein'
+            e['notes'] = data.get('notes', '')
+            found = True
+            break
+    if found:
+        speichere_zeiteintraege(eintraege)
+        return jsonify({'status': 'success', 'message': 'Eintrag aktualisiert.'})
+    else:
+        return jsonify({'status': 'error', 'message': 'Eintrag nicht gefunden.'}), 404
+
+@app.route('/delete_entry/<id>', methods=['DELETE'])
+def delete_entry(id):
+    eintraege = lade_zeiteintraege()
+    neue_eintraege = [e for e in eintraege if e['id'] != id]
+    if len(neue_eintraege) != len(eintraege):
+        speichere_zeiteintraege(neue_eintraege)
+        return jsonify({'status': 'success', 'message': 'Eintrag gelöscht.'})
+    else:
+        return jsonify({'status': 'error', 'message': 'Eintrag nicht gefunden.'}), 404
+
+@app.route('/export')
+def export():
+    eintraege = lade_zeiteintraege()
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=FIELDNAMES)
+    writer.writeheader()
+    writer.writerows(eintraege)
+    output.seek(0)
+    return send_file(
+        io.BytesIO(output.getvalue().encode('utf-8')),
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name='zeiterfassung_export.csv'
+    )
+
+# Dummy-Routen für User-Menü
+@app.route('/logout')
+def logout():
+    return redirect(url_for('index'))
+@app.route('/approve_entries')
+def approve_entries():
+    return redirect(url_for('index'))
+@app.route('/manage_users')
+def manage_users():
+    return redirect(url_for('index'))
+
+if __name__ == '__main__':
+    app.run(debug=True)
