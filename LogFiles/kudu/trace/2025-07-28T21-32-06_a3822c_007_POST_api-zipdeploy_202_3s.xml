@@ -1,0 +1,20 @@
+<step title="Incoming Request" date="2025-07-28T21:32:06.797" instance="a3822c" url="/api/zipdeploy?isAsync=true" method="POST" type="request" pid="774,1,24" Accept="*/*" Host="la-zeiterfassung-fyd4cge3d9e3cac4.scm.germanywestcentral-01.azurewebsites.net" User-Agent="AZURECLI/2.75.0 (HOMEBREW)" Accept-Encoding="gzip, deflate" Authorization="Bea..." Cache-Control="no-cache" Content-Type="application/octet-stream" Cookie="ARRAffinity=a3822c2d8e6c282e858ccf385ab6ea78b8bef2fd91cc6dcf216d29853550333c; ARRAffinitySameSite=a3822c2d8e6c282e858ccf385ab6ea78b8bef2fd91cc6dcf216d29853550333c" Content-Length="77946" x-ms-client-request-id="4a846cc6-6bfa-11f0-ad64-3ecdac25f1e6" x-ms-artifact-checksum="1d92e7b504b394215e84774a1afc02b35f2cbad00d4de72056cc579020c45f4b" X-ARR-LOG-ID="4a846cc6-6bfa-11f0-ad64-3ecdac25f1e6" CLIENT-IP="84.138.86.68:62952" X-SITE-DEPLOYMENT-ID="LA-Zeiterfassung" WAS-DEFAULT-HOSTNAME="la-zeiterfassung-fyd4cge3d9e3cac4.scm.germanywestcentral-01.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/zipdeploy?isAsync=true" X-Client-IP="84.138.86.68" X-Client-Port="62952" >
+  <step title="Cleanup Xml Logs" date="2025-07-28T21:32:06.857" >
+    <step title="Cleanup Infos" date="2025-07-28T21:32:07.019" totalFiles="1068" totalCleanup="908" /><!-- duration: 28ms -->
+  </step><!-- duration: 210ms -->
+  <step title="ZipPushDeploy" date="2025-07-28T21:32:07.330" >
+    <step title="ZipDeploy. Extract zip." date="2025-07-28T21:32:07.398" /><!-- duration: 2ms -->
+    <step title="None repository commit" date="2025-07-28T21:32:07.450" >
+      <step title="Commit id: 2dc89937-65eb-475f-9dc2-5a1e780650e8" date="2025-07-28T21:32:07.470" Message="N/A" AuthorName="N/A" AuthorEmail="N/A" /><!-- duration: 8ms -->
+    </step><!-- duration: 31ms -->
+    <step title="Starting PushDeployAsync" date="2025-07-28T21:32:07.518" /><!-- duration: 13ms -->
+    <step title="Writing artifact to /tmp/zipdeploy/b7a0cd99-f856-4537-a03d-80f04d117ac5.zip" date="2025-07-28T21:32:07.780" >
+      <step title="Writing multipart request body to /tmp/zipdeploy/b7a0cd99-f856-4537-a03d-80f04d117ac5.zip" date="2025-07-28T21:32:07.803" /><!-- duration: 17ms -->
+    </step><!-- duration: 576ms -->
+    <step title="Start deployment in the background" date="2025-07-28T21:32:08.414" >
+      <step title="Acquiring Deployment Lock" date="2025-07-28T21:32:08.486" /><!-- duration: 40ms -->
+      <step title="Acquired Deployment Lock" date="2025-07-28T21:32:08.823" /><!-- duration: 237ms -->
+    </step><!-- duration: 936ms -->
+  </step><!-- duration: 2052ms -->
+  <step title="Outgoing response" date="2025-07-28T21:32:09.433" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 20ms -->
+</step><!-- duration: 2664ms -->

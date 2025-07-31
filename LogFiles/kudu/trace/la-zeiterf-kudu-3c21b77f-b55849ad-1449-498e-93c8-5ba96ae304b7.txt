@@ -1,0 +1,1 @@
+2025-05-21T20:05:52  Startup Request, url: /api/logstreamV2/?max=50&ago=5m&api-version=2016-09-01, method: GET, type: request, pid: 773,1,18, ScmType: None

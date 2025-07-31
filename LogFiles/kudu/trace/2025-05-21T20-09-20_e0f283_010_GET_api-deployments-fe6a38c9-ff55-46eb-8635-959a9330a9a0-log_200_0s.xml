@@ -1,0 +1,9 @@
+<step title="Incoming Request" date="2025-05-21T20:09:20.065" instance="e0f283" url="/api/deployments/fe6a38c9-ff55-46eb-8635-959a9330a9a0/log" method="GET" type="request" pid="773,1,19" Host="la-zeiterfassung-fyd4cge3d9e3cac4.scm.germanywestcentral-01.azurewebsites.net" User-Agent="vscode-azureappservice/0.26.1 core-rest-pipeline/1.19.1 Node/20.19.0 OS/(arm64-Darwin-24.3.0)" Accept-Encoding="gzip,deflate" Accept-Language="de" Authorization="Bea..." x-ms-correlation-request-id="cf0e207d-8fff-4f80-90ab-9dddc1cdc7bf" x-ms-client-request-id="656ebf54-ed72-4bb5-87d6-20729a4e1bcb" X-ARR-LOG-ID="656ebf54-ed72-4bb5-87d6-20729a4e1bcb" CLIENT-IP="84.138.91.166:61770" X-SITE-DEPLOYMENT-ID="LA-Zeiterfassung" WAS-DEFAULT-HOSTNAME="la-zeiterfassung-fyd4cge3d9e3cac4.scm.germanywestcentral-01.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/deployments/fe6a38c9-ff55-46eb-8635-959a9330a9a0/log" X-Client-IP="84.138.91.166" X-Client-Port="61770" >
+  <step title="Cleanup Xml Logs" date="2025-05-21T20:09:20.078" >
+    <step title="Cleanup Infos" date="2025-05-21T20:09:20.127" totalFiles="347" totalCleanup="187" /><!-- duration: 3ms -->
+  </step><!-- duration: 54ms -->
+  <step title="DeploymentService.GetLogEntry" date="2025-05-21T20:09:20.141" >
+    <step title="DeploymentManager.GetLogEntries(id:fe6a38c9-ff55-46eb-8635-959a9330a9a0)" date="2025-05-21T20:09:20.143" /><!-- duration: 8ms -->
+  </step><!-- duration: 31ms -->
+  <step title="Outgoing response" date="2025-05-21T20:09:20.179" type="response" statusCode="200" statusText="OK" /><!-- duration: 4ms -->
+</step><!-- duration: 125ms -->

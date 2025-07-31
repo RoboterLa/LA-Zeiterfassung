@@ -1,0 +1,20 @@
+<step title="BackgroundTrace" date="2025-05-21T21:36:19.473" instance="e0f283" url="/api/zipdeploy" method="POST" >
+  <step title="Creating temporary deployment - FetchDeploymentManager" date="2025-05-21T21:36:19.546" /><!-- duration: 3ms -->
+  <step title="Creating temporary deployment" date="2025-05-21T21:36:19.565" /><!-- duration: 67ms -->
+  <step title="Performing fetch based deployment" date="2025-05-21T21:36:19.732" >
+    <step title="Cleaning up temp folders from previous zip deployments and extracting pushed zip file /tmp/zipdeploy/80cadb15-51b9-49ee-8194-8dbe46e43c42.zip (0.02 MB) to /tmp/zipdeploy/extracted" date="2025-05-21T21:36:20.934" >
+      <step title="ChmodRecursive Process exited with total time taken in ms: 110" date="2025-05-21T21:36:21.086" /><!-- duration: 11ms -->
+    </step><!-- duration: 165ms -->
+    <step title="Deployment timer started" date="2025-05-21T21:36:23.157" >
+      <step title="DeploymentManager.Deploy(id:9c828010-0369-4b8d-b409-bd2b5ad532ec)" date="2025-05-21T21:36:23.172" >
+        <step title="Collecting changeset information" date="2025-05-21T21:36:23.222" /><!-- duration: 141ms -->
+        <step title="Updating submodules" date="2025-05-21T21:36:23.370" /><!-- duration: 1139ms -->
+        <step title="Determining deployment builder" date="2025-05-21T21:36:24.811" >
+          <step title="Builder is OryxBuilder" date="2025-05-21T21:36:24.869" /><!-- duration: 3ms -->
+        </step><!-- duration: 70ms -->
+        <step title="PreDeployment: context.CleanOutputPath False" date="2025-05-21T21:36:24.931" >
+          <step title="PreDeployment: context.OutputPath /home/site/wwwroot" date="2025-05-21T21:36:25.042" >
+            <step title="Building" date="2025-05-21T21:36:25.186" >
+              <step title="Executing external process" date="2025-05-21T21:36:25.473" type="process" path="bash" arguments="-c &quot;oryx build /tmp/zipdeploy/extracted -o /home/site/wwwroot --platform python --platform-version 3.11 -p virtualenv_name=antenv --log-file /tmp/build-debug.log  -i /tmp/8dd98af896eae09 --compress-destination-dir | tee /tmp/oryx-build.log ; exit $PIPESTATUS &quot;" >
+                <step title="Cpu: gzip(883,5.880s)+tar(882,1.900s)+build.sh(858,0.010s)+oryx(837,3.080s)+tee(838,0.000s)+bash(836,0.000s)=total(10.860s)" date="2025-05-21T21:37:48.178" /><!-- duration: 83ms -->
+                <step title="bash: no io activity for 61s, prev-cpu=-1.000s, current-cpu=10.860s" date="2025-05-21T21:37:48.382" /><!-- duration: 120ms -->

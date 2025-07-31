@@ -1,8 +1,9 @@
-id,start,stop,dauer,notdienstwoche,quelle,bemerkung
-d6779d4a-47bb-4a73-a894-14fe2166b134,2025-07-12T09:19,2025-07-12T11:19,02:00,1,manuell,Test
-d32e0879-0604-40ff-8798-f5ffd45901b1,09:00,10:00,1:00,0,manuell,Hart gearbeitet
-b5930100-f95e-4b63-beac-ac3878b3b088,09:00,10:00,1:00,0,manuell,Hart gearbeitet
-06464275-08a2-4577-b991-6e6f19b74e27,09:00,10:00,1:00,0,manuell,Hart gearbeitet
-202cdf73-72f9-4630-814e-821b0eefdbc8,09:00,10:00,1:00,0,manuell,Hart gearbeitet
-83cf40dc-1ad3-4c59-900c-3e7b7f85f619,09:00,10:00,1:00,0,manuell,Hart gearbeitet
-45adb4e4-d50e-4c2d-b3fc-66545a7b978f,10:02,10:03,0:01,0,manuell,sehr hart gearbeitet
+id,datum,start,stop,dauer,notdienstwoche,quelle,bemerkung
+3d71594f-bc86-4832-904b-5acf2b6b8382,2025-07-27,20:37,20:37,0:00,0,manuell,Automatisch erstellt vom Dashboard
+e35f65d9-b5c1-4e55-bd9c-6e2204083d67,2025-07-27,20:45,20:50,0:05,0,manuell,Automatisch erstellt vom Dashboard
+827ffed1-c590-4371-8b7e-b9d051d95d67,2025-07-27,20:50,20:53,0:02,0,manuell,Automatisch erstellt vom Dashboard
+20ce2076-18b2-415e-a8f6-f25fe6554f5a,2025-07-27,21:00,21:02,0:01,0,manuell,Automatisch erstellt vom Dashboard
+50955f3c-b716-481b-8ef5-728daf690991,2025-07-28,06:10,06:35,0:25,0,manuell,Test vom Frontend
+418d99fe-e167-4a92-9102-1a02b341fb99,2025-07-28,06:10,06:35,0:25,0,manuell,CORS Test
+1cf5426e-962b-4ada-a127-cbc9a8c6bc65,2025-07-28,06:15,07:55,1:40,0,manuell,
+73e629b7-3b14-44c4-b58a-a6988c220b7e,2025-07-28,06:05,10:15,4:10,0,manuell,

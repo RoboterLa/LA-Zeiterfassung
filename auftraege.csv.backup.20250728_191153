@@ -1,0 +1,11 @@
+id,art,uhrzeit,standort,coords,details,done
+1,Reparatur,07:30,"Hauptbahnhof, München","[48.1402, 11.5586]","Aufzug klemmt, Notruf ausgelöst.",True
+2,Wartung,08:15,"Sendlinger Tor, München","[48.1325, 11.5674]","Regelmäßige Wartung, Ölwechsel.",True
+3,Modernisierung,09:00,"Odeonsplatz, München","[48.1421, 11.5802]","Umbau Steuerung, neue Kabine.",True
+4,Reparatur,10:00,"Theresienwiese, München","[48.1319, 11.5496]",Türkontakt defekt.,True
+5,Wartung,11:00,"Marienplatz, München","[48.1374, 11.5755]","Wartung, Sichtprüfung.",False
+6,Modernisierung,12:00,"Lehel, München","[48.1446, 11.5912]",Neuer Antrieb.,True
+7,Reparatur,13:30,"Giesing, München","[48.1147, 11.5886]",Hydraulikleck.,True
+8,Wartung,14:00,"Pasing, München","[48.1486, 11.4637]","Wartung, Reinigung.",True
+9,Modernisierung,15:00,"Schwabing, München","[48.1596, 11.5861]",Kabine erneuern.,True
+10,Reparatur,16:00,"Moosach, München","[48.1767, 11.5021]",Steuerungsausfall.,False

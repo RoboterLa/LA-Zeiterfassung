@@ -1,0 +1,4 @@
+2025-05-21T21:36:18  Startup Request, url: /api/zipdeploy?author=ms-azuretools-vscode&deployer=ms-azuretools-vscode&isAsync=true&trackDeploymentId=true, method: POST, type: request, pid: 770,1,18, ScmType: None
+2025-05-21T21:36:19      Error occurred, type: error, text: Error removing symlink: Path doesn't exist!, stackTrace:    at Mono.Unix.UnixFileSystemInfo.AssertValid()
+   at Mono.Unix.UnixFileSystemInfo.get_FileType()
+   at Kudu.Services.Deployment.PushDeploymentController.PushDeployAsync(ArtifactDeploymentInfo deploymentInfo, Boolean isAsync, HttpContext context, JObject requestJson) in /tmp/KuduLite/Kudu.Services/Deployment/PushDeploymentController.cs:line 740

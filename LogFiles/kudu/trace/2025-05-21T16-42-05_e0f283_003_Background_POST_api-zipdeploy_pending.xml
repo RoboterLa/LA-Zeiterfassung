@@ -1,0 +1,18 @@
+<step title="BackgroundTrace" date="2025-05-21T16:42:05.234" instance="e0f283" url="/api/zipdeploy" method="POST" >
+  <step title="Creating temporary deployment - FetchDeploymentManager" date="2025-05-21T16:42:05.335" /><!-- duration: 2ms -->
+  <step title="Creating temporary deployment" date="2025-05-21T16:42:05.341" /><!-- duration: 86ms -->
+  <step title="Performing fetch based deployment" date="2025-05-21T16:42:05.507" >
+    <step title="Cleaning up temp folders from previous zip deployments and extracting pushed zip file /tmp/zipdeploy/8004587f-0e1e-4f74-8d6d-857e50da2fe1.zip (0.01 MB) to /tmp/zipdeploy/extracted" date="2025-05-21T16:42:06.801" >
+      <step title="ChmodRecursive Process exited with total time taken in ms: 88" date="2025-05-21T16:42:08.019" /><!-- duration: 31ms -->
+    </step><!-- duration: 1279ms -->
+    <step title="Deployment timer started" date="2025-05-21T16:42:10.132" >
+      <step title="DeploymentManager.Deploy(id:3d9e75e9-43af-4a08-a0e6-6540d32d592a)" date="2025-05-21T16:42:10.150" >
+        <step title="Collecting changeset information" date="2025-05-21T16:42:10.192" /><!-- duration: 112ms -->
+        <step title="Updating submodules" date="2025-05-21T16:42:10.310" /><!-- duration: 1208ms -->
+        <step title="Determining deployment builder" date="2025-05-21T16:42:11.907" >
+          <step title="Builder is OryxBuilder" date="2025-05-21T16:42:11.998" /><!-- duration: 11ms -->
+        </step><!-- duration: 151ms -->
+        <step title="PreDeployment: context.CleanOutputPath False" date="2025-05-21T16:42:12.149" >
+          <step title="PreDeployment: context.OutputPath /home/site/wwwroot" date="2025-05-21T16:42:12.352" >
+            <step title="Building" date="2025-05-21T16:42:12.631" >
+              <step title="Executing external process" date="2025-05-21T16:42:14.270" type="process" path="bash" arguments="-c &quot;oryx build /tmp/zipdeploy/extracted -o /home/site/wwwroot --platform python --platform-version 3.11 -p virtualenv_name=antenv --log-file /tmp/build-debug.log  -i /tmp/8dd98866f89355b --compress-destination-dir | tee /tmp/oryx-build.log ; exit $PIPESTATUS &quot;" 

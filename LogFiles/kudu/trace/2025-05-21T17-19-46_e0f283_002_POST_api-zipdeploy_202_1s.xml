@@ -1,0 +1,21 @@
+<step title="Incoming Request" date="2025-05-21T17:19:46.627" instance="e0f283" url="/api/zipdeploy?author=ms-azuretools-vscode&amp;deployer=ms-azuretools-vscode&amp;isAsync=true&amp;trackDeploymentId=true" method="POST" type="request" pid="774,1,23" Host="la-zeiterfassung-fyd4cge3d9e3cac4.scm.germanywestcentral-01.azurewebsites.net" User-Agent="vscode-azureappservice/0.26.1 core-rest-pipeline/1.19.1 Node/20.19.0 OS/(arm64-Darwin-24.3.0)" Accept-Encoding="gzip,deflate" Accept-Language="de" Authorization="Bea..." Transfer-Encoding="chunked" x-ms-correlation-request-id="719f8b96-e18c-45dc-a7fc-7986db9340db" x-ms-client-request-id="9ed5b266-9462-4002-9d1c-31ad49dd2282" X-ARR-LOG-ID="9ed5b266-9462-4002-9d1c-31ad49dd2282" CLIENT-IP="84.138.91.166:64297" X-SITE-DEPLOYMENT-ID="LA-Zeiterfassung" WAS-DEFAULT-HOSTNAME="la-zeiterfassung-fyd4cge3d9e3cac4.scm.germanywestcentral-01.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/zipdeploy?author=ms-azuretools-vscode&amp;deployer=ms-azuretools-vscode&amp;isAsync=true&amp;trackDeploymentId=true" X-Client-IP="84.138.91.166" X-Client-Port="64297" >
+  <step title="Cleanup Xml Logs" date="2025-05-21T17:19:46.667" /><!-- duration: 23ms -->
+  <step title="ZipPushDeploy" date="2025-05-21T17:19:46.868" >
+    <step title="ZipDeploy. Extract zip." date="2025-05-21T17:19:46.909" /><!-- duration: 10ms -->
+    <step title="None repository commit" date="2025-05-21T17:19:46.981" >
+      <step title="Commit id: c4034f73-da3d-4749-aff8-072402b6cc31" date="2025-05-21T17:19:47.009" Message="N/A" AuthorName="N/A" AuthorEmail="N/A" /><!-- duration: 3ms -->
+    </step><!-- duration: 58ms -->
+    <step title="Starting PushDeployAsync" date="2025-05-21T17:19:47.051" /><!-- duration: 10ms -->
+    <step title="Error occurred" date="2025-05-21T17:19:47.213" type="error" text="Error removing symlink: Path doesn&apos;t exist!" stackTrace="   at Mono.Unix.UnixFileSystemInfo.AssertValid()
+   at Mono.Unix.UnixFileSystemInfo.get_FileType()
+   at Kudu.Services.Deployment.PushDeploymentController.PushDeployAsync(ArtifactDeploymentInfo deploymentInfo, Boolean isAsync, HttpContext context, JObject requestJson) in /tmp/KuduLite/Kudu.Services/Deployment/PushDeploymentController.cs:line 740" /><!-- duration: 3ms -->
+    <step title="Writing artifact to /tmp/zipdeploy/52cc104a-fdfb-426b-b3f6-99c5125ce422.zip" date="2025-05-21T17:19:47.227" >
+      <step title="Writing multipart request body to /tmp/zipdeploy/52cc104a-fdfb-426b-b3f6-99c5125ce422.zip" date="2025-05-21T17:19:47.241" /><!-- duration: 20ms -->
+    </step><!-- duration: 136ms -->
+    <step title="Start deployment in the background" date="2025-05-21T17:19:47.396" >
+      <step title="Acquiring Deployment Lock" date="2025-05-21T17:19:47.434" /><!-- duration: 2ms -->
+      <step title="Acquired Deployment Lock" date="2025-05-21T17:19:47.468" /><!-- duration: 3ms -->
+    </step><!-- duration: 177ms -->
+  </step><!-- duration: 711ms -->
+  <step title="Outgoing response" date="2025-05-21T17:19:47.598" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 9ms -->
+</step><!-- duration: 985ms -->

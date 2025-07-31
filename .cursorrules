@@ -1,0 +1,48 @@
+# Zeiterfassung System - Refactored Architecture
+
+## Backend (Flask)
+- MVC-Struktur mit Flask, SQLAlchemy, Blueprints
+- Kein HTML-Rendering, nur API-Endpunkte
+- Modular: models/, controllers/, services/, utils/
+- GenericCrudService für alle CRUD-Operationen
+- Type-Hints verwenden
+- Dateien <1000 Zeilen halten
+
+## Frontend (React)
+- React mit Hooks, React Router, Tailwind CSS
+- Reusable CRUD-Components (GenericCrudTable, GenericForm)
+- AuthContext für User-State-Management
+- API-Service mit Axios für Backend-Kommunikation
+- Functional Components bevorzugen
+
+## DRY-Prinzip
+- Generic Services/Components für Use-Cases
+- Wiederverwendbare Komponenten für CRUD-Operationen
+- Zentrale API-Services
+- Gemeinsame Utilities
+
+## Dateistruktur
+```
+/backend
+  /models - SQLAlchemy Models
+  /controllers - API Blueprints
+  /services - Business Logic
+  /utils - Helpers
+  config.py - Konfiguration
+  app.py - Flask App Factory
+
+/frontend
+  /src
+    /components - Reusable Components
+    /pages - Views
+    /services - API Helpers
+    /hooks - Custom Hooks
+    /context - React Context
+    /assets - Static Assets
+```
+
+## Ignoriere irrelevante Files in Prompts
+- Fokus auf Backend-API und React-Frontend
+- Verwende Type-Hints
+- Halte Dateien unter 1000 Zeilen
+- Teste lokal: Flask mit `flask run`, React mit `npm start` 

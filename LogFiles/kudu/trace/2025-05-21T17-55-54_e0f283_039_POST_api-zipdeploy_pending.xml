@@ -1,0 +1,19 @@
+<step title="Incoming Request" date="2025-05-21T17:55:54.968" instance="e0f283" url="/api/zipdeploy?author=ms-azuretools-vscode&amp;deployer=ms-azuretools-vscode&amp;isAsync=true&amp;trackDeploymentId=true" method="POST" type="request" pid="776,1,25" Host="la-zeiterfassung-fyd4cge3d9e3cac4.scm.germanywestcentral-01.azurewebsites.net" User-Agent="vscode-azureappservice/0.26.1 core-rest-pipeline/1.19.1 Node/20.19.0 OS/(arm64-Darwin-24.3.0)" Accept-Encoding="gzip,deflate" Accept-Language="de" Authorization="Bea..." Transfer-Encoding="chunked" x-ms-correlation-request-id="cdf2ecb9-4285-402e-8b10-8bdde6333bf6" x-ms-client-request-id="bbcdb592-348c-42f7-8b0b-e530768d555c" X-ARR-LOG-ID="bbcdb592-348c-42f7-8b0b-e530768d555c" CLIENT-IP="84.138.91.166:60530" X-SITE-DEPLOYMENT-ID="LA-Zeiterfassung" WAS-DEFAULT-HOSTNAME="la-zeiterfassung-fyd4cge3d9e3cac4.scm.germanywestcentral-01.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/zipdeploy?author=ms-azuretools-vscode&amp;deployer=ms-azuretools-vscode&amp;isAsync=true&amp;trackDeploymentId=true" X-Client-IP="84.138.91.166" X-Client-Port="60530" >
+  <step title="Cleanup Xml Logs" date="2025-05-21T17:55:54.974" /><!-- duration: 31ms -->
+  <step title="ZipPushDeploy" date="2025-05-21T17:55:55.085" >
+    <step title="ZipDeploy. Extract zip." date="2025-05-21T17:55:55.113" /><!-- duration: 2ms -->
+    <step title="Starting PushDeployAsync" date="2025-05-21T17:55:55.135" /><!-- duration: 8ms -->
+    <step title="Error occurred" date="2025-05-21T17:55:55.203" type="error" text="Error removing symlink: Path doesn&apos;t exist!" stackTrace="   at Mono.Unix.UnixFileSystemInfo.AssertValid()
+   at Mono.Unix.UnixFileSystemInfo.get_FileType()
+   at Kudu.Services.Deployment.PushDeploymentController.PushDeployAsync(ArtifactDeploymentInfo deploymentInfo, Boolean isAsync, HttpContext context, JObject requestJson) in /tmp/KuduLite/Kudu.Services/Deployment/PushDeploymentController.cs:line 740" /><!-- duration: 19ms -->
+    <step title="Writing artifact to /tmp/zipdeploy/294ed6c5-6f85-46e4-9149-0f392f07eaa8.zip" date="2025-05-21T17:55:55.245" >
+      <step title="Writing multipart request body to /tmp/zipdeploy/294ed6c5-6f85-46e4-9149-0f392f07eaa8.zip" date="2025-05-21T17:55:55.255" /><!-- duration: 21ms -->
+    </step><!-- duration: 61ms -->
+    <step title="Removing previous build artifact&apos;s manifest file" date="2025-05-21T17:55:55.356" >
+      <step title="Start deployment in the background" date="2025-05-21T17:55:55.405" >
+        <step title="Acquiring Deployment Lock" date="2025-05-21T17:55:55.426" /><!-- duration: 3ms -->
+        <step title="Acquired Deployment Lock" date="2025-05-21T17:55:55.461" /><!-- duration: 4ms -->
+      </step><!-- duration: 154ms -->
+    </step><!-- duration: 210ms -->
+    <step title="Outgoing response" date="2025-05-21T17:55:55.570" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 9ms -->
+  </step><!-- duration: 504ms -->

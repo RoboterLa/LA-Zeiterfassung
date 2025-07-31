@@ -1,0 +1,17 @@
+<step title="Incoming Request" date="2025-07-14T09:56:24.397" instance="2b261b" url="/api/zipdeploy?author=ms-azuretools-vscode&amp;deployer=ms-azuretools-vscode&amp;isAsync=true&amp;trackDeploymentId=true" method="POST" type="request" pid="768,1,29" Host="la-zeiterfassung-fyd4cge3d9e3cac4.scm.germanywestcentral-01.azurewebsites.net" User-Agent="vscode-azureappservice/0.26.2 core-rest-pipeline/1.20.0 Node/20.19.0 OS/(arm64-Darwin-24.5.0)" Accept-Encoding="gzip,deflate" Accept-Language="de" Authorization="Bea..." Transfer-Encoding="chunked" x-ms-correlation-request-id="1e7a903f-c530-4ed3-bbc7-a4e5da307928" x-ms-client-request-id="f9ee1ced-3bce-4df3-a8ec-667a0efb9671" X-ARR-LOG-ID="f9ee1ced-3bce-4df3-a8ec-667a0efb9671" CLIENT-IP="84.138.86.68:61828" X-SITE-DEPLOYMENT-ID="LA-Zeiterfassung" WAS-DEFAULT-HOSTNAME="la-zeiterfassung-fyd4cge3d9e3cac4.scm.germanywestcentral-01.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/zipdeploy?author=ms-azuretools-vscode&amp;deployer=ms-azuretools-vscode&amp;isAsync=true&amp;trackDeploymentId=true" X-Client-IP="84.138.86.68" X-Client-Port="61828" >
+  <step title="Cleanup Xml Logs" date="2025-07-14T09:56:24.399" >
+    <step title="Cleanup Infos" date="2025-07-14T09:56:24.416" totalFiles="704" totalCleanup="544" /><!-- duration: 4ms -->
+  </step><!-- duration: 23ms -->
+  <step title="ZipPushDeploy" date="2025-07-14T09:56:24.429" >
+    <step title="ZipDeploy. Extract zip." date="2025-07-14T09:56:24.439" /><!-- duration: 2ms -->
+    <step title="Starting PushDeployAsync" date="2025-07-14T09:56:24.445" /><!-- duration: 2ms -->
+    <step title="Writing artifact to /tmp/zipdeploy/7278bf66-1bda-4927-91bb-d33621265e4d.zip" date="2025-07-14T09:56:24.459" >
+      <step title="Writing multipart request body to /tmp/zipdeploy/7278bf66-1bda-4927-91bb-d33621265e4d.zip" date="2025-07-14T09:56:24.467" /><!-- duration: 10ms -->
+    </step><!-- duration: 57ms -->
+    <step title="Start deployment in the background" date="2025-07-14T09:56:24.540" >
+      <step title="Acquiring Deployment Lock" date="2025-07-14T09:56:24.567" /><!-- duration: 11ms -->
+      <step title="Acquired Deployment Lock" date="2025-07-14T09:56:24.654" /><!-- duration: 2ms -->
+    </step><!-- duration: 184ms -->
+  </step><!-- duration: 298ms -->
+  <step title="Outgoing response" date="2025-07-14T09:56:24.730" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 2ms -->
+</step><!-- duration: 338ms -->
