@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, session, redirect
 from typing import Dict, Any
-from config import Config
+from backend.config import Config
 
 # Blueprint für Auth-Routes
 auth_bp = Blueprint('auth', __name__, url_prefix='/api')

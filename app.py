@@ -15,10 +15,6 @@ from backend.app import create_app
 # App-Instanz erstellen
 app = create_app()
 
-# Statisches Frontend konfigurieren
-app.static_folder = 'frontend/build'
-app.static_url_path = ''
-
 if __name__ == '__main__':
     print("🚀 Zeiterfassung System wird auf Azure App Service gestartet...")
     app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 80))) 

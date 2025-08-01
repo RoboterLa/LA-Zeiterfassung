@@ -2,10 +2,10 @@ from flask import Flask, send_from_directory
 from flask_cors import CORS
 import os
 import logging
-from config import Config
-from utils.db import init_db, ensure_sessions_dir
-from controllers.api import api_bp
-from controllers.auth import auth_bp
+from backend.config import Config
+from backend.utils.db import init_db, ensure_sessions_dir
+from backend.controllers.api import api_bp
+from backend.controllers.auth import auth_bp
 
 # Logging konfigurieren
 logging.basicConfig(level=logging.DEBUG)
@@ -45,6 +45,8 @@ def create_app() -> Flask:
         if path and os.path.exists(os.path.join(app.static_folder, path)):
             return send_from_directory(app.static_folder, path)
         return send_from_directory(app.static_folder, 'index.html')
+    
+
     
     # Health Check
     @app.route('/health')

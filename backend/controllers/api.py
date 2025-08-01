@@ -1,12 +1,12 @@
 from flask import Blueprint, request, jsonify, session
 from typing import Dict, Any
-from services.crud_service import (
+from backend.services.crud_service import (
     AuftraegeService, 
     ZeiterfassungService, 
     ArbeitszeitService, 
     UrlaubService
 )
-from utils.auth import requires_role, is_authenticated
+from backend.utils.auth import requires_role, is_authenticated
 
 # Blueprint für API-Routes
 api_bp = Blueprint('api', __name__, url_prefix='/api')

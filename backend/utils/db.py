@@ -1,7 +1,7 @@
 import sqlite3
 import os
 from typing import Optional
-from config import Config
+from backend.config import Config
 
 def get_db_connection() -> sqlite3.Connection:
     """Erstellt eine Datenbankverbindung"""

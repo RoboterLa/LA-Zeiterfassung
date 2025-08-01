@@ -51,7 +51,6 @@ sessions/
 *.db
 *.csv
 *.log
-frontend/
 templates/
 backups/
 *.md

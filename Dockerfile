@@ -1,30 +1,32 @@
-# Multi-stage: Frontend bauen
+# Stage 1: Frontend bauen
 FROM node:20 AS frontend-builder
 WORKDIR /src/frontend
 COPY frontend/package.json frontend/package-lock.json* ./
 RUN npm ci
 COPY frontend/ .
+# Immer neu bauen für frische Assets
 RUN npm run build
 
-# Python runtime
+# Stage 2: Python runtime
 FROM python:3.11-slim
 WORKDIR /app
 
-# Optional: system libs falls gebraucht (z.B. für native dependencies)
+# Optional native libs (falls gebraucht)
 RUN apt-get update && apt-get install -y build-essential gcc libssl-dev libffi-dev && rm -rf /var/lib/apt/lists/*
 
 # App-Code kopieren
 COPY . .
 
-# Frontend-Build reinholen
-COPY --from=frontend-builder /src/frontend/build ./frontend/build
+# Frontend-Build übernehmen (verwende lokales Build)
+COPY frontend/build ./frontend/build
 
 # Python dependencies
 RUN pip install --upgrade pip
 RUN if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-# Azure setzt Port über ENV; fallback
+# Azure-Port
 ENV PORT=8000
+ENV WEBSITES_PORT=8000
 
-# Entry point: backend.app:app da das der korrekte Einstiegspunkt ist
-CMD ["sh", "-c", "gunicorn backend.app:app --workers 4 --bind=0.0.0.0:${PORT}"] 
+# Starten mit Gunicorn (Wrapper app.py erwartet app:app)
+CMD ["sh", "-c", "gunicorn app:app --workers 4 --bind=0.0.0.0:${WEBSITES_PORT:-${PORT:-8000}} --log-level info"] 

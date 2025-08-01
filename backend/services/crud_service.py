@@ -1,6 +1,6 @@
 from typing import Dict, List, Any, Optional
-from utils.db import get_db_connection
-from utils.auth import get_current_user
+from backend.utils.db import get_db_connection
+from backend.utils.auth import get_current_user
 import sqlite3
 from flask import has_request_context
 
