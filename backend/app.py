@@ -34,13 +34,19 @@ def create_app() -> Flask:
     # Database initialisieren
     init_db()
     
-    # Root-Route für React-App
+    # Root-Route für React-App - Alle Frontend-Routen an React weiterleiten
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
     def serve_react(path):
+        # API-Routen an Backend weiterleiten
+        if path.startswith('api/') or path.startswith('auth/') or path == 'health':
+            return {'error': 'API route not found'}, 404
+        
+        # Statische Dateien direkt servieren
         if path != "" and os.path.exists(app.static_folder + '/' + path):
             return send_from_directory(app.static_folder, path)
         else:
+            # Alle anderen Routen an React-App weiterleiten
             return send_from_directory(app.static_folder, 'index.html')
     
     # Health Check

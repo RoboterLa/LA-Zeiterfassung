@@ -1,10 +1,9 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import axios from 'axios';
 import './App.css';
 
 // Components
-import Header from './components/Header';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
 import ArbeitszeitPage from './pages/ArbeitszeitPage';
