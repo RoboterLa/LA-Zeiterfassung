@@ -20,81 +20,28 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 axios.defaults.baseURL = process.env.REACT_APP_API_URL || '';
 axios.defaults.withCredentials = true;
 
-// Protected Route Component
-const ProtectedRoute = ({ children, requiredRole = null }) => {
-  const { user, loading } = useAuth();
-  
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Lade...</div>;
-  }
-  
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  if (requiredRole && user.role !== requiredRole && user.role !== 'Admin') {
-    return <Navigate to="/" replace />;
-  }
-  
-  return children;
+// Simple redirect component
+const RedirectToLogin = () => {
+  React.useEffect(() => {
+    window.location.href = '/login';
+  }, []);
+  return <div>Weiterleitung zur Anmeldung...</div>;
 };
 
-// Main App Component
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-gray-50">
+        <div className="App">
           <Routes>
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/" element={
-              <ProtectedRoute>
-                <div>
-                  <Header />
-                  <Dashboard />
-                </div>
-              </ProtectedRoute>
-            } />
-            <Route path="/arbeitszeit" element={
-              <ProtectedRoute>
-                <div>
-                  <Header />
-                  <ArbeitszeitPage />
-                </div>
-              </ProtectedRoute>
-            } />
-            <Route path="/auftraege" element={
-              <ProtectedRoute>
-                <div>
-                  <Header />
-                  <AuftraegePage />
-                </div>
-              </ProtectedRoute>
-            } />
-            <Route path="/urlaub" element={
-              <ProtectedRoute>
-                <div>
-                  <Header />
-                  <UrlaubPage />
-                </div>
-              </ProtectedRoute>
-            } />
-            <Route path="/zeiterfassung" element={
-              <ProtectedRoute>
-                <div>
-                  <Header />
-                  <ZeiterfassungPage />
-                </div>
-              </ProtectedRoute>
-            } />
-            <Route path="/buero" element={
-              <ProtectedRoute requiredRole="Admin">
-                <div>
-                  <Header />
-                  <BueroPage />
-                </div>
-              </ProtectedRoute>
-            } />
+            <Route path="/" element={<RedirectToLogin />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/arbeitszeit" element={<ArbeitszeitPage />} />
+            <Route path="/auftraege" element={<AuftraegePage />} />
+            <Route path="/urlaub" element={<UrlaubPage />} />
+            <Route path="/zeiterfassung" element={<ZeiterfassungPage />} />
+            <Route path="/buero" element={<BueroPage />} />
           </Routes>
         </div>
       </Router>
