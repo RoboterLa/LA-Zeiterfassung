@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import ArbeitszeitTimer from '../components/ArbeitszeitTimer';
 
+// Monteur Dashboard - Modern Design v2.0
 const Dashboard = () => {
   const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
