@@ -2,6 +2,11 @@ from flask import Flask, send_from_directory, redirect
 from flask_cors import CORS
 import os
 import logging
+import sys
+
+# Add parent directory to path for imports
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
 from backend.config import Config
 from backend.utils.db import init_db, ensure_sessions_dir
 from backend.controllers.api import api_bp
