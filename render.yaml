@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: zeiterfassung-new
+    env: python
+    plan: free
+    buildCommand: |
+      pip install -r requirements.txt
+      curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+      apt-get install -y nodejs
+      cd frontend && npm install && npm run build && cd ..
+      cp -r frontend/build/* static/
+    startCommand: gunicorn backend.app:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: FLASK_SECRET_KEY
+        value: zeiterfassung-secret-key-2025
+      - key: CLIENT_ID
+        value: bce7f739-d799-4c57-8758-7b6b21999678
+      - key: CLIENT_SECRET
+        value: your-ms365-secret-here 

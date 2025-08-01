@@ -1,29 +1,28 @@
 #!/bin/bash
 
-# Build script for Azure App Service
 echo "🚀 Starting build process..."
 
 # Install Python dependencies
 echo "📦 Installing Python dependencies..."
-pip install --upgrade pip
 pip install -r requirements.txt
 
-# Create necessary directories
-echo "📁 Creating directories..."
-mkdir -p sessions
-mkdir -p instance
+# Install Node.js if not available
+if ! command -v node &> /dev/null; then
+    echo "📦 Installing Node.js..."
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+    apt-get install -y nodejs
+fi
 
-# Set permissions
-echo "🔐 Setting permissions..."
-chmod +x startup.txt
+# Install frontend dependencies and build
+echo "📦 Installing frontend dependencies..."
+cd frontend
+npm install
 
-# Create database if it doesn't exist
-echo "🗄️  Initializing database..."
-python -c "
-from app import app, db
-with app.app_context():
-    db.create_all()
-    print('Database initialized successfully')
-"
+echo "🔨 Building frontend..."
+npm run build
+
+echo "📁 Copying build files..."
+cd ..
+cp -r frontend/build/* static/
 
 echo "✅ Build completed successfully!" 
