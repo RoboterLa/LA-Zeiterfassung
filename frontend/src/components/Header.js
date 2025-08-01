@@ -5,7 +5,6 @@ const Header = ({ user, pendingCount = 0, overtimeWarnings = [] }) => {
   const [currentDate, setCurrentDate] = useState('');
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [showUserSwitcher, setShowUserSwitcher] = useState(false);
 
   // Berechne Gesamtanzahl der Benachrichtigungen
   const totalNotifications = pendingCount + overtimeWarnings.length;
@@ -187,17 +186,6 @@ const Header = ({ user, pendingCount = 0, overtimeWarnings = [] }) => {
               >
                 Arbeitszeit
               </a>
-              
-              {/* Benutzer-Umschaltung */}
-              <button
-                onClick={() => {
-                  setShowUserSwitcher(true);
-                  setIsMenuOpen(false);
-                }}
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                Benutzer wechseln
-              </button>
               
               <a 
                 href="/logout" 
