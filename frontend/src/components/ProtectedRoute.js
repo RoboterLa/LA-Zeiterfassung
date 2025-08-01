@@ -1,9 +1,10 @@
 import React from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import LoginPage from '../pages/LoginPage';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
   
   if (loading) {
     return (
@@ -17,7 +18,11 @@ const ProtectedRoute = ({ children }) => {
   }
   
   if (!user) {
-    return <LoginPage />;
+    // Prevent infinite loop by checking if already on login page
+    if (location.pathname === '/' || location.pathname === '/login') {
+      return null; // Don't redirect if already on login page
+    }
+    return <Navigate to="/" replace />;
   }
   
   return children;

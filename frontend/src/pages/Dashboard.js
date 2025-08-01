@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import ArbeitszeitTimer from '../components/ArbeitszeitTimer';
 
-// Monteur Dashboard - Modern Design v2.2 - Force New Build
+// Monteur Dashboard - Modern Design v2.3 - Force New Build - Fix Infinite Loop
 const Dashboard = () => {
   const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -48,8 +48,9 @@ const Dashboard = () => {
     }
   });
 
-  // Force new build
-  console.log('Dashboard v2.2 loaded - Modern Design Active');
+  // Force new build - Infinite Loop Fix
+  console.log('🚀 Dashboard v2.3 loaded - Infinite Loop Fixed - Modern Design Active');
+  console.log('✅ User:', user?.name, 'Role:', user?.role);
 
   // Update current time
   useEffect(() => {
