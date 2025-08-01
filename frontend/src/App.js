@@ -19,15 +19,15 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 axios.defaults.baseURL = process.env.REACT_APP_API_URL || '';
 axios.defaults.withCredentials = true;
 
-// Protected route component
+// Simplified protected route component
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { user, loading } = useAuth();
   
   if (loading) {
-    return <div>Laden...</div>;
+    return <div className="flex items-center justify-center h-screen">Laden...</div>;
   }
   
-  if (!isAuthenticated()) {
+  if (!user) {
     return <LoginPage />;
   }
   

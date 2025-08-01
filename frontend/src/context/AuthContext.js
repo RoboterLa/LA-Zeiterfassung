@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI } from '../services/api';
 
 const AuthContext = createContext();
@@ -16,26 +16,26 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fix: useCallback to prevent infinite loops
-  const checkAuth = useCallback(async () => {
-    try {
-      const response = await authAPI.me();
-      setUser(response.data.user);
-    } catch (error) {
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []); // Empty deps - runs only once
-
-  // Fix: Proper dependencies
+  // Simple auth check without dependencies to prevent loops
   useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await authAPI.me();
+        setUser(response.data.user);
+      } catch (error) {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     checkAuth();
-  }, [checkAuth]); // Only checkAuth as dependency
+  }, []); // Empty array - runs only once on mount
 
   const login = async (credentials) => {
     try {
       setError(null);
+      setLoading(true);
       const response = await authAPI.login(credentials);
       setUser(response.data.user);
       return response.data;
@@ -43,6 +43,8 @@ export const AuthProvider = ({ children }) => {
       const errorMessage = error.response?.data?.error || 'Login fehlgeschlagen';
       setError(errorMessage);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -71,7 +73,6 @@ export const AuthProvider = ({ children }) => {
     logout,
     isAuthenticated,
     isAdmin,
-    checkAuth,
   };
 
   return (
