@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI } from '../services/api';
 
 const AuthContext = createContext();
@@ -16,21 +16,21 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fix infinite loop with useCallback
-  const checkAuth = useCallback(async () => {
-    try {
-      const response = await authAPI.me();
-      setUser(response.data.user);
-    } catch (error) {
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []); // Empty dependency array - runs only once
-
+  // Simple auth check - NO useCallback to prevent loops
   useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await authAPI.me();
+        setUser(response.data.user);
+      } catch (error) {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     checkAuth();
-  }, [checkAuth]); // Only depends on checkAuth which is stable
+  }, []); // Empty array - runs only once on mount
 
   const login = async (credentials) => {
     try {
