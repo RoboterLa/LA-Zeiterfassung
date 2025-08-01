@@ -17,7 +17,7 @@ import BueroPage from './pages/BueroPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 // API Configuration
-axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 axios.defaults.withCredentials = true;
 
 // Protected Route Component

@@ -17,8 +17,8 @@ RUN apt-get update && apt-get install -y build-essential gcc libssl-dev libffi-d
 # App-Code kopieren
 COPY . .
 
-# Frontend-Build übernehmen (verwende lokales Build)
-COPY frontend/build ./frontend/build
+# Frontend-Build aus Stage 1 übernehmen
+COPY --from=frontend-builder /src/frontend/build ./frontend/build
 
 # Python dependencies
 RUN pip install --upgrade pip

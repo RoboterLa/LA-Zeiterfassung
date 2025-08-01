@@ -14,7 +14,9 @@ print("🚀 Refactored App wird gestartet...")
 
 def create_app() -> Flask:
     """Flask-App Factory"""
-    app = Flask(__name__, static_folder='frontend/build', static_url_path='')
+    # Korrekte Pfade für Heroku Deployment
+    static_folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static')
+    app = Flask(__name__, static_folder=static_folder, static_url_path='')
     
     # Konfiguration
     app.config.from_object(Config)
@@ -23,37 +25,30 @@ def create_app() -> Flask:
     ensure_sessions_dir()
     
     # CORS für React-Frontend
-    CORS(app, 
-         supports_credentials=Config.CORS_SUPPORTS_CREDENTIALS,
-         origins=Config.CORS_ORIGINS,
-         allow_headers=Config.CORS_ALLOW_HEADERS,
-         methods=Config.CORS_METHODS)
+    CORS(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
     
     # Blueprints registrieren
-    app.register_blueprint(api_bp)
-    app.register_blueprint(auth_bp)
+    app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(auth_bp, url_prefix='/auth')
     
-    # Datenbank initialisieren
-    with app.app_context():
-        init_db()
+    # Database initialisieren
+    init_db()
     
-    # React-Routes (Single Page Application)
+    # Root-Route für React-App
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
     def serve_react(path):
-        """Serve React-App für alle Frontend-Routes"""
-        if path and os.path.exists(os.path.join(app.static_folder, path)):
+        if path != "" and os.path.exists(app.static_folder + '/' + path):
             return send_from_directory(app.static_folder, path)
-        return send_from_directory(app.static_folder, 'index.html')
-    
-
+        else:
+            return send_from_directory(app.static_folder, 'index.html')
     
     # Health Check
     @app.route('/health')
     def health():
-        """Health Check Endpoint"""
-        return {'status': 'healthy', 'version': '1.0.0'}
+        return {'status': 'healthy', 'message': 'Zeiterfassung System läuft!'}
     
+    print("✅ Flask-App erfolgreich konfiguriert")
     return app
 
 # App-Instanz für direkten Import

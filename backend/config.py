@@ -12,6 +12,8 @@ class Config:
     CORS_ORIGINS: List[str] = [
         'http://localhost:3000',
         'https://localhost:3000', 
+        'http://localhost:8000',
+        'https://localhost:8000',
         'http://192.168.50.99:3000',
         'http://localhost:3001',
         'https://localhost:3001',
