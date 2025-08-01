@@ -24,10 +24,18 @@ def create_app():
     # Load configuration
     app.config.from_object(Config)
     
-    # Set secret key
-    app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key')
-    app.config['CLIENT_ID'] = os.environ.get('CLIENT_ID', 'default-client-id')
-    app.config['CLIENT_SECRET'] = os.environ.get('CLIENT_SECRET', 'default-client-secret')
+    # Set secret key and required environment variables
+    app.secret_key = os.environ.get('FLASK_SECRET_KEY')
+    app.config['CLIENT_ID'] = os.environ.get('CLIENT_ID')
+    app.config['CLIENT_SECRET'] = os.environ.get('CLIENT_SECRET')
+    
+    # Validate required environment variables
+    if not app.secret_key:
+        raise ValueError("FLASK_SECRET_KEY muss gesetzt sein!")
+    if not app.config['CLIENT_ID']:
+        raise ValueError("CLIENT_ID muss gesetzt sein!")
+    if not app.config['CLIENT_SECRET']:
+        raise ValueError("CLIENT_SECRET muss gesetzt sein!")
     
     # Initialize CORS
     CORS(app, origins=Config.CORS_ORIGINS)
@@ -46,7 +54,8 @@ def create_app():
     def health_check():
         return jsonify({
             "message": "Zeiterfassung System läuft!",
-            "status": "healthy"
+            "status": "healthy",
+            "environment": os.environ.get('FLASK_ENV', 'production')
         })
     
     # Serve static files with cache busting

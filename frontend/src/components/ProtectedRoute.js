@@ -5,7 +5,8 @@ import { useAuth } from '../context/AuthContext';
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
-  
+
+  // Show loading spinner while checking auth
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -16,15 +17,17 @@ const ProtectedRoute = ({ children }) => {
       </div>
     );
   }
-  
+
+  // If not authenticated and not already on login page, redirect to login
   if (!user) {
     // Prevent infinite loop by checking if already on login page
     if (location.pathname === '/' || location.pathname === '/login') {
-      return null; // Don't redirect if already on login page
+      return null; // Don't redirect if already on login
     }
     return <Navigate to="/" replace />;
   }
-  
+
+  // User is authenticated, render the protected content
   return children;
 };
 
