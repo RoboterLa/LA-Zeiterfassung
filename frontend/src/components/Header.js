@@ -1,154 +1,215 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useEffect } from 'react';
 
-const Header = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
+const Header = ({ user, pendingCount = 0, overtimeWarnings = [] }) => {
+  const [currentTime, setCurrentTime] = useState('');
+  const [currentDate, setCurrentDate] = useState('');
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showUserSwitcher, setShowUserSwitcher] = useState(false);
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
+  // Berechne Gesamtanzahl der Benachrichtigungen
+  const totalNotifications = pendingCount + overtimeWarnings.length;
 
-  const navigation = [
-    { name: 'Dashboard', href: '/', icon: '🏠' },
-    { name: 'Aufträge', href: '/auftraege', icon: '📋' },
-    { name: 'Arbeitszeit', href: '/arbeitszeit', icon: '⏰' },
-    { name: 'Urlaub', href: '/urlaub', icon: '🏖️' },
-    { name: 'Zeiterfassung', href: '/zeiterfassung', icon: '⏱️' },
-  ];
+  // Zeit aktualisieren
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTime(now.toLocaleTimeString('de-DE', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit' 
+      }));
+      setCurrentDate(now.toLocaleDateString('de-DE', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      }));
+    };
 
-  if (user?.role === 'Admin') {
-    navigation.push({ name: 'Büro', href: '/buero', icon: '🏢' });
-  }
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Menü schließen wenn außerhalb geklickt wird
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const target = event.target;
+      if (!target.closest('.menu-container')) {
+        setIsMenuOpen(false);
+        setIsNotificationOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   return (
-    <header className="bg-blue-600 shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo und Titel */}
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="flex items-center">
-                <div className="bg-white rounded-lg p-2 mr-3">
-                  <img 
-                    src="https://lackner-aufzuege-gmbh.com/wp-content/uploads/2021/09/cropped-2205_lackner_r.png" 
-                    alt="Lackner Aufzüge" 
-                    className="h-8 w-auto"
-                  />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-white">Zeiterfassung System</h1>
-                  <p className="text-sm text-blue-100">Lackner Aufzüge GmbH</p>
-                </div>
-              </div>
-            </div>
+    <header className="bg-[#0066b3] shadow-lg">
+      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+        {/* Logo mit Rahmen */}
+        <div className="logo-container flex items-center">
+          <div className="bg-white rounded-lg p-2 shadow-md border-2 border-white">
+            <img 
+              src="https://lackner-aufzuege-gmbh.com/wp-content/uploads/2021/09/cropped-2205_lackner_r.png" 
+              alt="Lackner Aufzüge Logo" 
+              className="h-10"
+            />
+          </div>
+        </div>
+
+        {/* Rechte Seite */}
+        <div className="flex items-center">
+          {/* Zeit und Datum */}
+          <div className="text-white text-sm mr-4 hidden md:block">
+            <span className="mr-2">{currentDate}</span>
+            <span>{currentTime}</span>
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className="text-blue-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                <span className="mr-2">{item.icon}</span>
-                {item.name}
-              </Link>
-            ))}
-          </nav>
+          {/* Benachrichtigungen */}
+          <div className="relative mr-4 menu-container">
+            <button 
+              id="notification-bell"
+              className="focus:outline-none relative"
+              onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+              aria-label="Benachrichtigungen"
+            >
+              <svg className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              {totalNotifications > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5 border-2 border-white">
+                  {totalNotifications}
+                </span>
+              )}
+            </button>
 
-          {/* User Menu */}
-          <div className="flex items-center space-x-4">
-            {/* Live Zeit */}
-            <div className="hidden lg:block text-white text-sm">
-              <div id="current-time" className="font-mono"></div>
-            </div>
-
-            {/* User Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center space-x-2 text-white hover:text-blue-100 transition-colors"
+            {/* Benachrichtigungs-Dropdown */}
+            <div className={`absolute right-0 mt-2 w-72 bg-white rounded-md shadow-lg py-2 z-20 ${isNotificationOpen ? 'block' : 'hidden'}`}>
+              <a 
+                href="/approve-entries" 
+                className="block px-4 py-3 text-gray-800 hover:bg-gray-100 cursor-pointer"
+                onClick={() => setIsNotificationOpen(false)}
               >
-                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-semibold">
-                    {user?.name?.charAt(0) || 'U'}
+                {totalNotifications > 0 ? (
+                  <span className="font-semibold">
+                    Es gibt {totalNotifications} Benachrichtigungen.
                   </span>
-                </div>
-                <span className="hidden md:block">{user?.name}</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                  <div className="px-4 py-2 text-sm text-gray-700 border-b">
-                    <div className="font-medium">{user?.name}</div>
-                    <div className="text-gray-500">{user?.email}</div>
-                  </div>
-                  <Link
-                    to="/profile"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                ) : (
+                  <span>Keine neuen Benachrichtigungen.</span>
+                )}
+              </a>
+              {overtimeWarnings.length > 0 && (
+                <div className="mt-2 px-4 py-2 text-gray-800">
+                  <h3 className="font-semibold mb-1">Überstundenwarnungen:</h3>
+                  <ul className="list-disc list-inside text-sm text-gray-600">
+                    {overtimeWarnings.map((warning, index) => (
+                      <li key={index}>
+                        {warning.date}: {warning.totalHours} Stunden Überstunden.
+                      </li>
+                    ))}
+                  </ul>
+                  <a 
+                    href="/arbeitszeit?show_overtime=true" 
+                    className="block mt-3 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    onClick={() => setIsNotificationOpen(false)}
                   >
-                    Profil
-                  </Link>
-                  <Link
-                    to="/settings"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Einstellungen
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                  >
-                    Abmelden
-                  </button>
+                    → Arbeitszeit überprüfen und korrigieren
+                  </a>
                 </div>
               )}
             </div>
+          </div>
 
-            {/* Mobile menu button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden text-white hover:text-blue-100"
+          {/* Burger-Menü */}
+          <div className="relative menu-container">
+            <button 
+              id="burger-menu-button"
+              className="ml-2 flex items-center text-white focus:outline-none" 
+              aria-label="Menü öffnen"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
+
+            {/* Dropdown-Menü */}
+            <div className={`absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-30 ${isMenuOpen ? 'block' : 'hidden'}`}>
+              <a 
+                href="/" 
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Dashboard
+              </a>
+              <a 
+                href="/zeiterfassung" 
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Zeiterfassung
+              </a>
+              <a 
+                href="/approve-entries" 
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Zeiteinträge genehmigen
+              </a>
+              <a 
+                href="/urlaub" 
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Urlaubsübersicht
+              </a>
+              <a 
+                href="/manage-users" 
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Benutzerverwaltung
+              </a>
+              <a 
+                href="/meine-auftraege" 
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Meine Aufträge heute
+              </a>
+              <a 
+                href="/arbeitszeit" 
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Arbeitszeit
+              </a>
+              
+              {/* Benutzer-Umschaltung */}
+              <button
+                onClick={() => {
+                  setShowUserSwitcher(true);
+                  setIsMenuOpen(false);
+                }}
+                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                Benutzer wechseln
+              </button>
+              
+              <a 
+                href="/logout" 
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Abmelden
+              </a>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Mobile Navigation */}
-      {mobileMenuOpen && (
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-blue-700">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className="text-blue-100 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <span className="mr-2">{item.icon}</span>
-                {item.name}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
     </header>
   );
 };
