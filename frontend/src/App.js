@@ -28,6 +28,21 @@ const RedirectToLogin = () => {
   return <div>Weiterleitung zur Anmeldung...</div>;
 };
 
+// Protected route component
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+    return <div>Laden...</div>;
+  }
+  
+  if (!isAuthenticated()) {
+    return <RedirectToLogin />;
+  }
+  
+  return children;
+};
+
 function App() {
   return (
     <AuthProvider>
@@ -36,12 +51,36 @@ function App() {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/" element={<RedirectToLogin />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/arbeitszeit" element={<ArbeitszeitPage />} />
-            <Route path="/auftraege" element={<AuftraegePage />} />
-            <Route path="/urlaub" element={<UrlaubPage />} />
-            <Route path="/zeiterfassung" element={<ZeiterfassungPage />} />
-            <Route path="/buero" element={<BueroPage />} />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/arbeitszeit" element={
+              <ProtectedRoute>
+                <ArbeitszeitPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/auftraege" element={
+              <ProtectedRoute>
+                <AuftraegePage />
+              </ProtectedRoute>
+            } />
+            <Route path="/urlaub" element={
+              <ProtectedRoute>
+                <UrlaubPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/zeiterfassung" element={
+              <ProtectedRoute>
+                <ZeiterfassungPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/buero" element={
+              <ProtectedRoute>
+                <BueroPage />
+              </ProtectedRoute>
+            } />
           </Routes>
         </div>
       </Router>
