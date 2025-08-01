@@ -3,6 +3,9 @@ import { useAuth } from '../context/AuthContext';
 import ArbeitszeitTimer from '../components/ArbeitszeitTimer';
 import WeatherWidget from '../components/WeatherWidget';
 
+// FORCE CACHE BUSTING - NEW DASHBOARD v4.0 - TIMESTAMP: 2025-08-01 13:45:00
+console.log('🚀 NEW DASHBOARD LOADED - v4.0 - TIMESTAMP:', new Date().toISOString());
+
 const Dashboard = () => {
   const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
