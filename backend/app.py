@@ -38,10 +38,6 @@ def create_app() -> Flask:
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
     def serve_react(path):
-        # API-Routen an Backend weiterleiten
-        if path.startswith('api/') or path.startswith('auth/') or path == 'health':
-            return {'error': 'API route not found'}, 404
-        
         # Statische Dateien direkt servieren
         if path != "" and os.path.exists(app.static_folder + '/' + path):
             return send_from_directory(app.static_folder, path)
