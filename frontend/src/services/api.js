@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Axios-Instanz mit Standard-Konfiguration
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000',
+  baseURL: process.env.REACT_APP_API_URL || '',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -36,9 +36,9 @@ api.interceptors.response.use(
 
 // Auth API
 export const authAPI = {
-  login: (credentials) => api.post('/api/login', credentials),
-  logout: () => api.post('/api/logout'),
-  me: () => api.get('/api/me'),
+  login: (credentials) => api.post('/auth/login', credentials),
+  logout: () => api.post('/auth/logout'),
+  me: () => api.get('/auth/me'),
 };
 
 // Aufträge API
