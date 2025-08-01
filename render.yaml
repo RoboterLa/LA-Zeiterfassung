@@ -5,10 +5,7 @@ services:
     plan: free
     buildCommand: |
       pip install -r requirements.txt
-      curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-      apt-get install -y nodejs
-      cd frontend && npm install && npm run build && cd ..
-      cp -r frontend/build/* static/
+      echo "Frontend already built locally - skipping Node.js build"
     startCommand: gunicorn backend.app:app --bind 0.0.0.0:$PORT
     envVars:
       - key: FLASK_SECRET_KEY
