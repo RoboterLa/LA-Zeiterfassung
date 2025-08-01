@@ -1,16 +1,25 @@
 services:
   - type: web
-    name: zeiterfassung-new
+    name: zeiterfassung-render
     env: python
     plan: free
     buildCommand: |
+      echo "🚀 Starting complete rebuild..."
       pip install -r requirements.txt
-      echo "Frontend already built locally - skipping Node.js build"
+      echo "✅ Python dependencies installed"
+      echo "📦 Installing Node.js for frontend build..."
+      curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+      apt-get install -y nodejs
+      echo "🔨 Building frontend..."
+      cd frontend && npm install && npm run build && cd ..
+      echo "📁 Copying build files..."
+      cp -r frontend/build/* static/
+      echo "✅ Build completed successfully!"
     startCommand: gunicorn backend.app:app --bind 0.0.0.0:$PORT
     envVars:
       - key: FLASK_SECRET_KEY
-        value: zeiterfassung-secret-key-2025
+        generateValue: true
       - key: CLIENT_ID
-        value: bce7f739-d799-4c57-8758-7b6b21999678
+        value: your-client-id-here
       - key: CLIENT_SECRET
-        value: your-ms365-secret-here 
+        value: your-client-secret-here 

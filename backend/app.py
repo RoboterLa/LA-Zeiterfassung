@@ -1,4 +1,4 @@
-from flask import Flask, send_from_directory, redirect
+from flask import Flask, send_from_directory, request, jsonify
 from flask_cors import CORS
 import os
 import logging
@@ -17,68 +17,63 @@ logging.basicConfig(level=logging.DEBUG)
 
 print("🚀 Refactored App wird gestartet...")
 
-def create_app() -> Flask:
-    """Flask-App Factory"""
-    # Korrekte Pfade für Heroku Deployment
-    static_folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static')
-    app = Flask(__name__, static_folder=static_folder, static_url_path='')
+def create_app():
+    app = Flask(__name__, 
+                static_folder=os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static'))
     
-    # Secret Key laden (aus Env)
-    app.secret_key = os.environ.get('FLASK_SECRET_KEY')
-    if not app.secret_key:
-        print("⚠️  FLASK_SECRET_KEY nicht gesetzt - verwende Fallback")
-        app.secret_key = 'fallback-secret-key-for-development'
-    
-    # MS365 Config
-    app.config['CLIENT_ID'] = os.environ.get('CLIENT_ID')
-    app.config['CLIENT_SECRET'] = os.environ.get('CLIENT_SECRET')
-    
-    # Konfiguration
+    # Load configuration
     app.config.from_object(Config)
     
-    # Session-Konfiguration
-    ensure_sessions_dir()
+    # Set secret key
+    app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key')
+    app.config['CLIENT_ID'] = os.environ.get('CLIENT_ID', 'default-client-id')
+    app.config['CLIENT_SECRET'] = os.environ.get('CLIENT_SECRET', 'default-client-secret')
     
-    # CORS für React-Frontend
-    CORS(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
+    # Initialize CORS
+    CORS(app, origins=Config.CORS_ORIGINS)
     
-    # Blueprints registrieren
+    # Register blueprints
     app.register_blueprint(api_bp, url_prefix='/api')
     app.register_blueprint(auth_bp, url_prefix='/auth')
     
-    # Database initialisieren
-    init_db()
+    # Initialize database
+    with app.app_context():
+        init_db()
+        ensure_sessions_dir()
     
-    # Catch-all Route für SPA: Serviere index.html für alle GET-Requests
+    # Health check endpoint
+    @app.route('/health')
+    def health_check():
+        return jsonify({
+            "message": "Zeiterfassung System läuft!",
+            "status": "healthy"
+        })
+    
+    # Serve static files with cache busting
+    @app.route('/static/<path:filename>')
+    def static_files(filename):
+        response = send_from_directory(app.static_folder, filename)
+        # Add cache busting headers
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        return response
+    
+    # Catch-all route for SPA
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
     def catch_all(path):
-        # APIs ausschließen
+        # Don't serve index.html for API routes
         if path.startswith('api/') or path.startswith('auth/') or path == 'health':
             return "Not Found", 404
         
-        # Statische Dateien direkt servieren
-        if path != "" and os.path.exists(app.static_folder + '/' + path):
-            return send_from_directory(app.static_folder, path)
-        
-        # Alle anderen Routen an React-App weiterleiten
+        # Serve index.html for all other routes (SPA routing)
         return send_from_directory(app.static_folder, 'index.html')
     
-    # Optional: Redirect /login zu Frontend-Login
-    @app.route('/login')
-    def login_redirect():
-        return redirect('/#login')  # Hash für HashRouter
-    
-    # Health Check
-    @app.route('/health')
-    def health():
-        return {'status': 'healthy', 'message': 'Zeiterfassung System läuft!'}
-    
-    print("✅ Flask-App erfolgreich konfiguriert")
     return app
 
-# App-Instanz für direkten Import
 app = create_app()
 
 if __name__ == '__main__':
-    app.run(debug=Config.DEBUG, host='0.0.0.0', port=5001) 
+    port = int(os.environ.get('PORT', 5001))
+    app.run(host='0.0.0.0', port=port, debug=True) 
