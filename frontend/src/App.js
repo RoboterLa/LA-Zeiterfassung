@@ -19,14 +19,6 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 axios.defaults.baseURL = process.env.REACT_APP_API_URL || '';
 axios.defaults.withCredentials = true;
 
-// Simple redirect component
-const RedirectToLogin = () => {
-  React.useEffect(() => {
-    window.location.href = '/login';
-  }, []);
-  return <div>Weiterleitung zur Anmeldung...</div>;
-};
-
 // Protected route component
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -36,7 +28,7 @@ const ProtectedRoute = ({ children }) => {
   }
   
   if (!isAuthenticated()) {
-    return <RedirectToLogin />;
+    return <LoginPage />;
   }
   
   return children;
@@ -49,7 +41,7 @@ function App() {
         <div className="App">
           <Routes>
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/" element={<RedirectToLogin />} />
+            <Route path="/" element={<LoginPage />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
