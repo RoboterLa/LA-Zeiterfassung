@@ -19,8 +19,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 axios.defaults.baseURL = process.env.REACT_APP_API_URL || '';
 axios.defaults.withCredentials = true;
 
-// Simple app component that shows login or dashboard
-const AppContent = () => {
+// Protected route component
+const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   
   if (loading) {
@@ -31,7 +31,7 @@ const AppContent = () => {
     return <LoginPage />;
   }
   
-  return <Dashboard />;
+  return children;
 };
 
 function App() {
@@ -40,7 +40,7 @@ function App() {
       <Router>
         <div className="App">
           <Routes>
-            <Route path="/" element={<AppContent />} />
+            <Route path="/" element={<LoginPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
@@ -78,20 +78,5 @@ function App() {
     </AuthProvider>
   );
 }
-
-// Protected route component
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
-  
-  if (loading) {
-    return <div>Laden...</div>;
-  }
-  
-  if (!isAuthenticated()) {
-    return <LoginPage />;
-  }
-  
-  return children;
-};
 
 export default App; 
