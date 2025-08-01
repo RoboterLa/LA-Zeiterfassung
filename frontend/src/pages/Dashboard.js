@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import ArbeitszeitTimer from '../components/ArbeitszeitTimer';
 
-// Monteur Dashboard - Modern Design v2.0
+// Monteur Dashboard - Modern Design v2.2 - Force New Build
 const Dashboard = () => {
   const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -47,6 +47,9 @@ const Dashboard = () => {
       resturlaub: 30
     }
   });
+
+  // Force new build
+  console.log('Dashboard v2.2 loaded - Modern Design Active');
 
   // Update current time
   useEffect(() => {
