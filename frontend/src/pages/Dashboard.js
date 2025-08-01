@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import ArbeitszeitTimer from '../components/ArbeitszeitTimer';
 
-// Monteur Dashboard - Modern Design v2.4 - Cache Busting Fix - Force New Build
+// Monteur Dashboard - Modern Design v2.5 - Force New Build - Cache Busting
 const Dashboard = () => {
   const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -48,10 +48,10 @@ const Dashboard = () => {
     }
   });
 
-  // Force new build - Cache Busting Fix
-  console.log('🚀 Dashboard v2.4 loaded - Cache Busting Active - Infinite Loop Fixed');
+  // Force new build - Cache Busting v2.5
+  console.log('🚀 Dashboard v2.5 loaded - Cache Busting Active - Modern Design');
   console.log('✅ User:', user?.name, 'Role:', user?.role);
-  console.log('🎨 Modern Design with Blue Gradient Header');
+  console.log('🎨 Modern Design with Blue Gradient Header - CACHE BUSTED');
 
   // Update current time
   useEffect(() => {
