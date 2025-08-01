@@ -14,9 +14,13 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      await login({ email, password });
-      // Redirect to root which shows appropriate dashboard based on user role
-      navigate('/');
+      const result = await login({ email, password });
+      // Redirect basierend auf User-Rolle
+      if (result.user.role === 'Admin') {
+        navigate('/buero');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error) {
       // Error wird bereits im AuthContext gesetzt
     } finally {
