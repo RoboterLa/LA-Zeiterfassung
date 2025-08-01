@@ -1,38 +1,16 @@
 import React from 'react';
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
-import axios from 'axios';
-import './App.css';
-
-// Components
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
-import ArbeitszeitPage from './pages/ArbeitszeitPage';
-import AuftraegePage from './pages/AuftraegePage';
+import BueroPage from './pages/BueroPage';
 import UrlaubPage from './pages/UrlaubPage';
 import ZeiterfassungPage from './pages/ZeiterfassungPage';
-import BueroPage from './pages/BueroPage';
+import ProtectedRoute from './components/ProtectedRoute';
+import axios from 'axios';
 
-// Context
-import { AuthProvider, useAuth } from './context/AuthContext';
-
-// API Configuration
+// Set API base URL
 axios.defaults.baseURL = process.env.REACT_APP_API_URL || '';
-axios.defaults.withCredentials = true;
-
-// Simplified protected route component
-const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth();
-  
-  if (loading) {
-    return <div className="flex items-center justify-center h-screen">Laden...</div>;
-  }
-  
-  if (!user) {
-    return <LoginPage />;
-  }
-  
-  return children;
-};
 
 function App() {
   return (
@@ -47,14 +25,9 @@ function App() {
                 <Dashboard />
               </ProtectedRoute>
             } />
-            <Route path="/arbeitszeit" element={
+            <Route path="/buero" element={
               <ProtectedRoute>
-                <ArbeitszeitPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/auftraege" element={
-              <ProtectedRoute>
-                <AuftraegePage />
+                <BueroPage />
               </ProtectedRoute>
             } />
             <Route path="/urlaub" element={
@@ -67,11 +40,7 @@ function App() {
                 <ZeiterfassungPage />
               </ProtectedRoute>
             } />
-            <Route path="/buero" element={
-              <ProtectedRoute>
-                <BueroPage />
-              </ProtectedRoute>
-            } />
+            <Route path="/logout" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
       </Router>
