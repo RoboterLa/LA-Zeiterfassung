@@ -34,13 +34,33 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+// Root component that shows appropriate dashboard based on user role
+const RootComponent = () => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return <div className="flex items-center justify-center h-screen">Laden...</div>;
+  }
+  
+  if (!user) {
+    return <LoginPage />;
+  }
+  
+  // Show appropriate dashboard based on user role
+  if (user.role === 'Admin') {
+    return <BueroPage />;
+  } else {
+    return <Dashboard />;
+  }
+};
+
 function App() {
   return (
     <AuthProvider>
       <Router>
         <div className="App">
           <Routes>
-            <Route path="/" element={<LoginPage />} />
+            <Route path="/" element={<RootComponent />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
