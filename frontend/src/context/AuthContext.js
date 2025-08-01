@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authAPI } from '../services/api';
 
 const AuthContext = createContext();
@@ -16,12 +16,8 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Prüfe beim Start, ob User angemeldet ist
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
+  // Fix: useCallback to prevent infinite loops
+  const checkAuth = useCallback(async () => {
     try {
       const response = await authAPI.me();
       setUser(response.data.user);
@@ -30,7 +26,12 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // Empty deps - runs only once
+
+  // Fix: Proper dependencies
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]); // Only checkAuth as dependency
 
   const login = async (credentials) => {
     try {
