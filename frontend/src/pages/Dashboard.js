@@ -1,15 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import ArbeitszeitTimer from '../components/ArbeitszeitTimer';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [stats] = useState({
+  const [stats, setStats] = useState({
     auftraege: { total: 5, done: 2, pending: 3 },
-    arbeitszeit: { today: "07:32", week: "32:15", overtime: "2:45" },
+    arbeitszeit: { today: '07:32', week: '32:15', overtime: '2:45' },
     urlaub: { remaining: 25, used: 5, planned: 3 }
   });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   const formatTime = (date) => {
     return date.toLocaleTimeString('de-DE', {
