@@ -1,9 +1,0 @@
-<step title="Incoming Request" date="2025-05-21T17:31:29.262" instance="e0f283" url="/api/deployments/latest" method="GET" type="request" pid="772,1,26" Host="la-zeiterfassung-fyd4cge3d9e3cac4.scm.germanywestcentral-01.azurewebsites.net" User-Agent="vscode-azureappservice/0.26.1 core-rest-pipeline/1.19.1 Node/20.19.0 OS/(arm64-Darwin-24.3.0)" Accept-Encoding="gzip,deflate" Accept-Language="de" Authorization="Bea..." x-ms-correlation-request-id="bfc96c9c-161e-4f5d-9414-92ee373286b7" x-ms-client-request-id="9d94250d-c2a3-4825-bbed-2de2bed6c405" X-ARR-LOG-ID="9d94250d-c2a3-4825-bbed-2de2bed6c405" CLIENT-IP="84.138.91.166:64081" X-SITE-DEPLOYMENT-ID="LA-Zeiterfassung" WAS-DEFAULT-HOSTNAME="la-zeiterfassung-fyd4cge3d9e3cac4.scm.germanywestcentral-01.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/deployments/latest" X-Client-IP="84.138.91.166" X-Client-Port="64081" >
-  <step title="Cleanup Xml Logs" date="2025-05-21T17:31:29.266" /><!-- duration: 10ms -->
-  <step title="DeploymentService.GetResult" date="2025-05-21T17:31:29.285" >
-    <step title="DeploymentService.GetLatestDeployment" date="2025-05-21T17:31:29.288" >
-      <step title="DeploymentManager.GetResults" date="2025-05-21T17:31:29.291" /><!-- duration: 302ms -->
-    </step><!-- duration: 334ms -->
-  </step><!-- duration: 347ms -->
-  <step title="Outgoing response" date="2025-05-21T17:31:29.652" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 3ms -->
-</step><!-- duration: 402ms -->

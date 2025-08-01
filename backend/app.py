@@ -61,7 +61,27 @@ def create_app():
     # Serve static files with cache busting
     @app.route('/static/<path:filename>')
     def static_files(filename):
+        # Check if file exists in static folder
+        static_path = os.path.join(app.static_folder, filename)
+        if not os.path.exists(static_path):
+            return "Not Found", 404
+        
         response = send_from_directory(app.static_folder, filename)
+        # Add cache busting headers
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        return response
+    
+    # Serve nested static files (static/static/)
+    @app.route('/static/static/<path:filename>')
+    def nested_static_files(filename):
+        nested_static_folder = os.path.join(app.static_folder, 'static')
+        static_path = os.path.join(nested_static_folder, filename)
+        if not os.path.exists(static_path):
+            return "Not Found", 404
+        
+        response = send_from_directory(nested_static_folder, filename)
         # Add cache busting headers
         response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
         response.headers['Pragma'] = 'no-cache'

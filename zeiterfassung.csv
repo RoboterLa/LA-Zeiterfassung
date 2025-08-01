@@ -1,2 +1,0 @@
-id,elevator_id,location,date,activity_type,start_time,end_time,emergency_week,notes,status,mitarbeiter
-1,E001,Musterstraße 1,2025-07-28,Wartung,08:00,12:00,0,Test-Eintrag,pending,test@example.com

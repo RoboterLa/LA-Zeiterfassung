@@ -1,1 +1,0 @@
-2025-07-15T06:44:54  Startup Request, url: /api/zipdeploy?author=ms-azuretools-vscode&deployer=ms-azuretools-vscode&isAsync=true&trackDeploymentId=true, method: POST, type: request, pid: 769,1,5, ScmType: None

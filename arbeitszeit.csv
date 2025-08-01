@@ -1,9 +1,0 @@
-id,datum,start,stop,dauer,notdienstwoche,quelle,bemerkung
-3d71594f-bc86-4832-904b-5acf2b6b8382,2025-07-27,20:37,20:37,0:00,0,manuell,Automatisch erstellt vom Dashboard
-e35f65d9-b5c1-4e55-bd9c-6e2204083d67,2025-07-27,20:45,20:50,0:05,0,manuell,Automatisch erstellt vom Dashboard
-827ffed1-c590-4371-8b7e-b9d051d95d67,2025-07-27,20:50,20:53,0:02,0,manuell,Automatisch erstellt vom Dashboard
-20ce2076-18b2-415e-a8f6-f25fe6554f5a,2025-07-27,21:00,21:02,0:01,0,manuell,Automatisch erstellt vom Dashboard
-50955f3c-b716-481b-8ef5-728daf690991,2025-07-28,06:10,06:35,0:25,0,manuell,Test vom Frontend
-418d99fe-e167-4a92-9102-1a02b341fb99,2025-07-28,06:10,06:35,0:25,0,manuell,CORS Test
-1cf5426e-962b-4ada-a127-cbc9a8c6bc65,2025-07-28,06:15,07:55,1:40,0,manuell,
-73e629b7-3b14-44c4-b58a-a6988c220b7e,2025-07-28,06:05,10:15,4:10,0,manuell,
