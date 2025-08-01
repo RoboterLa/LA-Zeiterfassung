@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_NAME: RoboterLa/la-zeiterfassung
+  IMAGE_NAME: rlck1988/la-zeiterfassung
   IMAGE_TAG: latest
   AZURE_WEBAPP_NAME: la-zeiterfassung-fyd4cge3d9e3cac4
 
