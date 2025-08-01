@@ -1,42 +1,59 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { login, error } = useAuth();
+  const [credentials, setCredentials] = useState({
+    email: '',
+    password: ''
+  });
+  const [error, setError] = useState('');
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setError('');
 
     try {
-      const result = await login({ email, password });
-      // Redirect basierend auf User-Rolle
-      if (result.user.role === 'Admin') {
+      const response = await login(credentials);
+      
+      // Redirect based on user role
+      if (response.data.user.role === 'Monteur') {
+        navigate('/monteur_dashboard'); // NEW ROUTE!
+      } else if (response.data.user.role === 'Admin') {
         navigate('/buero');
       } else {
-        navigate('/dashboard');
+        navigate('/monteur_dashboard'); // Default to monteur dashboard
       }
     } catch (error) {
-      // Error wird bereits im AuthContext gesetzt
-    } finally {
-      setLoading(false);
+      setError(error.response?.data?.error || 'Login fehlgeschlagen');
     }
   };
 
+  const handleChange = (e) => {
+    setCredentials({
+      ...credentials,
+      [e.target.name]: e.target.value
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
+          <div className="mx-auto h-12 w-12 bg-blue-600 rounded-lg flex items-center justify-center">
+            <img
+              className="h-8 w-auto"
+              src="https://lackner-aufzuege-gmbh.com/wp-content/uploads/2021/09/cropped-2205_lackner_r.png"
+              alt="Lackner Aufzüge"
+            />
+          </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            🚀 Zeiterfassung System
+            Zeiterfassung System
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Lackner Aufzüge
+            Lackner Aufzüge GmbH
           </p>
         </div>
         
@@ -50,11 +67,12 @@ const LoginPage = () => {
                 id="email"
                 name="email"
                 type="email"
+                autoComplete="email"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="E-Mail"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={credentials.email}
+                onChange={handleChange}
               />
             </div>
             <div>
@@ -65,17 +83,18 @@ const LoginPage = () => {
                 id="password"
                 name="password"
                 type="password"
+                autoComplete="current-password"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="Passwort"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={credentials.password}
+                onChange={handleChange}
               />
             </div>
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
               {error}
             </div>
           )}
@@ -83,27 +102,12 @@ const LoginPage = () => {
           <div>
             <button
               type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              {loading ? 'Anmelden...' : '🔐 Anmelden'}
+              Anmelden
             </button>
           </div>
         </form>
-
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-          <h4 className="text-sm font-medium text-blue-800 mb-2">
-            📋 Test-Anmeldedaten:
-          </h4>
-          <div className="text-sm text-blue-700 space-y-1">
-            <p><strong>Monteur:</strong></p>
-            <p>E-Mail: monteur@test.com</p>
-            <p>Passwort: test123</p>
-            <p className="mt-2"><strong>Administrator:</strong></p>
-            <p>E-Mail: admin@test.com</p>
-            <p>Passwort: test123</p>
-          </div>
-        </div>
       </div>
     </div>
   );
