@@ -1,4 +1,4 @@
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, redirect
 from flask_cors import CORS
 import os
 import logging
@@ -18,6 +18,16 @@ def create_app() -> Flask:
     static_folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static')
     app = Flask(__name__, static_folder=static_folder, static_url_path='')
     
+    # Secret Key laden (aus Env)
+    app.secret_key = os.environ.get('FLASK_SECRET_KEY')
+    if not app.secret_key:
+        print("⚠️  FLASK_SECRET_KEY nicht gesetzt - verwende Fallback")
+        app.secret_key = 'fallback-secret-key-for-development'
+    
+    # MS365 Config
+    app.config['CLIENT_ID'] = os.environ.get('CLIENT_ID')
+    app.config['CLIENT_SECRET'] = os.environ.get('CLIENT_SECRET')
+    
     # Konfiguration
     app.config.from_object(Config)
     
@@ -34,16 +44,25 @@ def create_app() -> Flask:
     # Database initialisieren
     init_db()
     
-    # Root-Route für React-App - Alle Frontend-Routen an React weiterleiten
+    # Catch-all Route für SPA: Serviere index.html für alle GET-Requests
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
-    def serve_react(path):
+    def catch_all(path):
+        # APIs ausschließen
+        if path.startswith('api/') or path.startswith('auth/') or path == 'health':
+            return "Not Found", 404
+        
         # Statische Dateien direkt servieren
         if path != "" and os.path.exists(app.static_folder + '/' + path):
             return send_from_directory(app.static_folder, path)
-        else:
-            # Alle anderen Routen an React-App weiterleiten
-            return send_from_directory(app.static_folder, 'index.html')
+        
+        # Alle anderen Routen an React-App weiterleiten
+        return send_from_directory(app.static_folder, 'index.html')
+    
+    # Optional: Redirect /login zu Frontend-Login
+    @app.route('/login')
+    def login_redirect():
+        return redirect('/#login')  # Hash für HashRouter
     
     # Health Check
     @app.route('/health')
