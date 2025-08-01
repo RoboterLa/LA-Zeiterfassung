@@ -66,4 +66,4 @@ Die Anwendung verwendet eine SQLite-Datenbank (`zeiterfassung.db`) mit folgenden
 - Session-basierte Authentifizierung
 - MS365 OAuth 2.0 Integration
 - Benutzerberechtigungen (Admin, Genehmiger)
-- Sichere Token-Verwaltung 
+- Sichere Token-Verwaltung # Test Commit für GitHub Actions
