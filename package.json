@@ -1,0 +1,22 @@
+{
+  "name": "zeiterfassung-system",
+  "version": "1.0.0",
+  "description": "Zeiterfassung System für Aufzugsfirma",
+  "scripts": {
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && python app.py"
+  },
+  "devDependencies": {
+    "semantic-release": "^22.0.12"
+  },
+  "release": {
+    "branches": ["main"]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RoboterLa/LA-Zeiterfassung.git"
+  },
+  "keywords": ["zeiterfassung", "flask", "react", "azure"],
+  "author": "Robert Lackner",
+  "license": "MIT"
+} 

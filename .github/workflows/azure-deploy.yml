@@ -1,0 +1,94 @@
+name: Azure Deploy with Semantic Versioning
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm run build
+          cd ..
+
+      - name: Semantic Release
+        uses: cycjimmy/semantic-release-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          semantic_version: 22
+          branches: |
+            [
+              "main"
+            ]
+          plugins: |
+            [
+              "@semantic-release/commit-analyzer",
+              "@semantic-release/release-notes-generator",
+              "@semantic-release/github"
+            ]
+
+      - name: Package Artefakt
+        run: |
+          mkdir -p deploy_package
+          cp -r frontend/build deploy_package/static
+          cp -r backend deploy_package/backend
+          cp app.py requirements.txt deploy_package/
+          tar -czf app-artifact.tar.gz deploy_package
+
+      - name: Upload Artefakt
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-artifact
+          path: app-artifact.tar.gz
+        continue-on-error: true
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: Download Artefakt
+        uses: actions/download-artifact@v4
+        with:
+          name: app-artifact
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Extract Artefakt
+        run: tar -xzf app-artifact.tar.gz
+
+      - name: Deploy to Azure
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: zeiterfassung-app-b1
+          package: deploy_package
+        continue-on-error: true
+
+      - name: Health Check
+        run: |
+          sleep 30
+          curl -f https://zeiterfassung-app-b1.azurewebsites.net/health || exit 1 

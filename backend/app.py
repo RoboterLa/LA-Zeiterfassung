@@ -15,7 +15,12 @@ def create_app():
     static_folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static')
     app = Flask(__name__, static_folder=static_folder, static_url_path='')
 
-    app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key')
+    # Error-Handling für kritische Umgebungsvariablen
+    try:
+        app.config['SECRET_KEY'] = os.environ['FLASK_SECRET_KEY']
+    except KeyError:
+        raise ValueError("FLASK_SECRET_KEY not set - required for production")
+    
     app.config['CLIENT_ID'] = os.environ.get('CLIENT_ID', 'dev-client-id')
     app.config['CLIENT_SECRET'] = os.environ.get('CLIENT_SECRET', 'dev-client-secret')
 
