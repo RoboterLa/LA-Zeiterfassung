@@ -1,18 +1,21 @@
 import axios from 'axios';
 
-// Axios-Instanz mit Standard-Konfiguration
+// API Base URL
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+// Axios Instance
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || '',
-  withCredentials: true,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: API_BASE_URL,
+  timeout: 10000,
 });
 
-// Request Interceptor für Auth-Token
+// Request Interceptor - JWT Token hinzufügen
 api.interceptors.request.use(
   (config) => {
-    // Hier könnte später ein Auth-Token hinzugefügt werden
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -20,14 +23,13 @@ api.interceptors.request.use(
   }
 );
 
-// Response Interceptor für Error-Handling
+// Response Interceptor - 401 Handling
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Redirect to login bei 401
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -36,47 +38,94 @@ api.interceptors.response.use(
 
 // Auth API
 export const authAPI = {
-  login: (credentials) => api.post('/auth/login', credentials),
-  logout: () => api.post('/auth/logout'),
-  me: () => api.get('/auth/me'),
+  login: (credentials) => api.post('/api/auth/login', credentials),
+  me: () => api.get('/api/auth/me'),
+  register: (userData) => api.post('/api/auth/register', userData),
+  getUsers: () => api.get('/api/auth/users'),
+  updateUser: (userId, userData) => api.put(`/api/auth/users/${userId}`, userData),
+  changePassword: (passwordData) => api.post('/api/auth/change-password', passwordData),
 };
 
-// Aufträge API
-export const auftraegeAPI = {
-  getAll: (filters = {}) => api.get('/api/auftraege', { params: filters }),
-  create: (data) => api.post('/api/auftraege', data),
-  update: (id, data) => api.put(`/api/auftraege/${id}`, data),
-  delete: (id) => api.delete(`/api/auftraege/${id}`),
+// TimeClock API
+export const timeclockAPI = {
+  clockIn: () => api.post('/api/timeclock/clock-in'),
+  clockOut: () => api.post('/api/timeclock/clock-out'),
+  getStatus: () => api.get('/api/timeclock/status'),
+  getTodayRecords: () => api.get('/api/timeclock/today'),
+  startBreak: () => api.post('/api/timeclock/break'),
+  endBreak: () => api.put('/api/timeclock/break'),
 };
 
-// Zeiterfassung API
-export const zeiterfassungAPI = {
-  getAll: (filters = {}) => api.get('/api/zeiterfassung', { params: filters }),
-  create: (data) => api.post('/api/zeiterfassung', data),
-  update: (id, data) => api.put(`/api/zeiterfassung/${id}`, data),
-  delete: (id) => api.delete(`/api/zeiterfassung/${id}`),
+// Work Reports API
+export const reportsAPI = {
+  create: (reportData) => api.post('/api/reports', reportData),
+  submit: (reportId) => api.post(`/api/reports/${reportId}/submit`),
+  approve: (reportId) => api.post(`/api/reports/${reportId}/approve`),
+  reject: (reportId, reason) => api.post(`/api/reports/${reportId}/reject`, { reason }),
+  getAll: (filters) => api.get('/api/reports', { params: filters }),
+  getById: (reportId) => api.get(`/api/reports/${reportId}`),
 };
 
-// Arbeitszeit API
-export const arbeitszeitAPI = {
-  getAll: () => api.get('/api/arbeitszeit'),
-  create: (data) => api.post('/api/arbeitszeit', data),
-  update: (id, data) => api.put(`/api/arbeitszeit/${id}`, data),
-  delete: (id) => api.delete(`/api/arbeitszeit/${id}`),
+// Job Sites API
+export const sitesAPI = {
+  getAll: () => api.get('/api/sites'),
+  getById: (siteId) => api.get(`/api/sites/${siteId}`),
+  create: (siteData) => api.post('/api/sites', siteData),
+  update: (siteId, siteData) => api.put(`/api/sites/${siteId}`, siteData),
+  delete: (siteId) => api.delete(`/api/sites/${siteId}`),
 };
 
-// Urlaub API
-export const urlaubAPI = {
-  getAll: () => api.get('/api/urlaub'),
-  create: (data) => api.post('/api/urlaub', data),
-  update: (id, data) => api.put(`/api/urlaub/${id}`, data),
-  delete: (id) => api.delete(`/api/urlaub/${id}`),
+// Absences API
+export const absencesAPI = {
+  create: (absenceData) => api.post('/api/absences', absenceData),
+  getAll: (filters) => api.get('/api/absences', { params: filters }),
+  getById: (absenceId) => api.get(`/api/absences/${absenceId}`),
+  approve: (absenceId) => api.post(`/api/absences/${absenceId}/approve`),
+  reject: (absenceId, reason) => api.post(`/api/absences/${absenceId}/reject`, { reason }),
 };
 
-// Status API
-export const statusAPI = {
-  getStatus: () => api.get('/api/status'),
-  getHealth: () => api.get('/health'),
+// Notifications API
+export const notificationsAPI = {
+  getAll: () => api.get('/api/notifications'),
+  markAsRead: (notificationId) => api.put(`/api/notifications/${notificationId}/read`),
+  markAllAsRead: () => api.put('/api/notifications/read-all'),
+  delete: (notificationId) => api.delete(`/api/notifications/${notificationId}`),
+};
+
+// Export API
+export const exportAPI = {
+  exportTimeRecords: (filters) => api.get('/api/export/time-records', { 
+    params: filters,
+    responseType: 'blob'
+  }),
+  exportWorkReports: (filters) => api.get('/api/export/work-reports', { 
+    params: filters,
+    responseType: 'blob'
+  }),
+  exportAbsences: (filters) => api.get('/api/export/absences', { 
+    params: filters,
+    responseType: 'blob'
+  }),
+  exportPayroll: (month, year) => api.get('/api/export/payroll', { 
+    params: { month, year },
+    responseType: 'blob'
+  }),
+};
+
+// Dashboard API
+export const dashboardAPI = {
+  getStats: () => api.get('/api/dashboard/stats'),
+  getPendingApprovals: () => api.get('/api/dashboard/pending-approvals'),
+  getTeamStatus: () => api.get('/api/dashboard/team-status'),
+  getAbsenceCalendar: (month, year) => api.get('/api/dashboard/absence-calendar', {
+    params: { month, year }
+  }),
+};
+
+// Health API
+export const healthAPI = {
+  check: () => api.get('/health'),
+  apiStatus: () => api.get('/api/status'),
 };
 
 export default api; 

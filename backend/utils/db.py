@@ -1,97 +1,153 @@
-import sqlite3
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from models import Base, User, UserRole
+from utils.auth import AuthManager
 import os
-from typing import Optional
-from backend.config import Config
+import logging
 
-def get_db_connection() -> sqlite3.Connection:
-    """Erstellt eine Datenbankverbindung"""
-    conn = sqlite3.connect(Config.DATABASE_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+logger = logging.getLogger(__name__)
 
-def init_db() -> None:
-    """Initialisiert die Datenbank mit allen Tabellen"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
+class DatabaseManager:
+    def __init__(self):
+        self.engine = None
+        self.SessionLocal = None
+        self._setup_engine()
     
-    # Aufträge Tabelle
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS auftraege (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            art TEXT NOT NULL,
-            uhrzeit TEXT NOT NULL,
-            standort TEXT NOT NULL,
-            coords TEXT,
-            details TEXT,
-            done BOOLEAN DEFAULT FALSE,
-            priority TEXT DEFAULT 'normal',
-            mitarbeiter TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
+    def _setup_engine(self):
+        """Setup database engine based on environment"""
+        database_url = os.environ.get('DATABASE_URL')
+        
+        if database_url:
+            # Production: PostgreSQL/MySQL
+            self.engine = create_engine(database_url)
+        else:
+            # Development: SQLite
+            db_path = os.path.join(os.path.dirname(__file__), '..', 'zeiterfassung.db')
+            self.engine = create_engine(f'sqlite:///{db_path}')
+        
+        self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
     
-    # Zeiterfassung Tabelle
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS zeiterfassung (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            elevator_id TEXT,
-            location TEXT,
-            date TEXT NOT NULL,
-            activity_type TEXT NOT NULL,
-            start_time TEXT NOT NULL,
-            end_time TEXT,
-            emergency_week BOOLEAN DEFAULT FALSE,
-            notes TEXT,
-            status TEXT DEFAULT 'pending',
-            mitarbeiter TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
+    def create_tables(self):
+        """Create all tables"""
+        Base.metadata.create_all(bind=self.engine)
+        logger.info("Database tables created successfully")
     
-    # Arbeitszeit Tabelle
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS arbeitszeit (
-            id TEXT PRIMARY KEY,
-            datum TEXT NOT NULL,
-            start TEXT NOT NULL,
-            ende TEXT,
-            pause TEXT DEFAULT '00:00',
-            gesamt TEXT,
-            mitarbeiter TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
+    def drop_tables(self):
+        """Drop all tables"""
+        Base.metadata.drop_all(bind=self.engine)
+        logger.info("Database tables dropped successfully")
     
-    # Urlaub Tabelle
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS urlaub (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            mitarbeiter TEXT NOT NULL,
-            start_datum TEXT NOT NULL,
-            end_datum TEXT NOT NULL,
-            tage INTEGER,
-            typ TEXT DEFAULT 'Urlaub',
-            status TEXT DEFAULT 'pending',
-            bemerkung TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
+    def get_session(self):
+        """Get database session"""
+        return self.SessionLocal()
     
-    # User Tabelle (für zukünftige Migration von TEST_USERS)
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            name TEXT NOT NULL,
-            role TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    conn.commit()
-    conn.close()
+    def close_session(self, session):
+        """Close database session"""
+        session.close()
 
-def ensure_sessions_dir() -> None:
-    """Stellt sicher, dass das Sessions-Verzeichnis existiert"""
-    os.makedirs(Config.SESSION_FILE_DIR, exist_ok=True) 
+# Global database manager instance
+db_manager = DatabaseManager()
+
+def get_db():
+    """Dependency to get database session"""
+    db = db_manager.get_session()
+    try:
+        yield db
+    finally:
+        db_manager.close_session(db)
+
+def init_database():
+    """Initialize database with tables"""
+    try:
+        db_manager.create_tables()
+        logger.info("Database initialized successfully")
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
+        raise
+
+def reset_database():
+    """Reset database (drop and recreate tables)"""
+    try:
+        db_manager.drop_tables()
+        db_manager.create_tables()
+        logger.info("Database reset successfully")
+    except Exception as e:
+        logger.error(f"Database reset failed: {e}")
+        raise
+
+def setup_demo_users():
+    """Setup demo users for testing"""
+    try:
+        session = db_manager.get_session()
+        auth_manager = AuthManager()
+        
+        # Check if demo users already exist
+        existing_users = session.query(User).filter(User.username.in_(['monteur1', 'meister1', 'admin'])).all()
+        if existing_users:
+            logger.info("Demo users already exist")
+            return
+        
+        # Create demo users
+        demo_users = [
+            {
+                'username': 'monteur1',
+                'name': 'Max Mustermann',
+                'email': 'max.mustermann@example.com',
+                'role': UserRole.MONTEUR,
+                'password': 'Demo123!',
+                'vacation_days_remaining': 25,
+                'weekly_hours': 40
+            },
+            {
+                'username': 'meister1',
+                'name': 'Hans Meister',
+                'email': 'hans.meister@example.com',
+                'role': UserRole.MEISTER,
+                'password': 'Demo123!',
+                'vacation_days_remaining': 30,
+                'weekly_hours': 40
+            },
+            {
+                'username': 'admin',
+                'name': 'Admin User',
+                'email': 'admin@example.com',
+                'role': UserRole.ADMIN,
+                'password': 'Demo123!',
+                'vacation_days_remaining': 30,
+                'weekly_hours': 40
+            },
+            {
+                'username': 'buero1',
+                'name': 'Anna Büro',
+                'email': 'anna.buero@example.com',
+                'role': UserRole.BUERO,
+                'password': 'Demo123!',
+                'vacation_days_remaining': 25,
+                'weekly_hours': 40
+            }
+        ]
+        
+        for user_data in demo_users:
+            hashed_password = auth_manager.hash_password(user_data['password'])
+            user = User(
+                username=user_data['username'],
+                name=user_data['name'],
+                email=user_data['email'],
+                password_hash=hashed_password,
+                role=user_data['role'],
+                vacation_days_remaining=user_data['vacation_days_remaining'],
+                weekly_hours=user_data['weekly_hours'],
+                is_active=True
+            )
+            session.add(user)
+        
+        session.commit()
+        logger.info("Demo users created successfully")
+        
+    except Exception as e:
+        logger.error(f"Failed to setup demo users: {e}")
+        session.rollback()
+        raise
+    finally:
+        db_manager.close_session(session) 

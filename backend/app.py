@@ -1,108 +1,72 @@
-from flask import Flask, send_from_directory, request, jsonify
+from flask import Flask, send_from_directory, jsonify, make_response
 from flask_cors import CORS
 import os
 import logging
-import sys
+from utils.db import init_database, setup_demo_users
+from controllers.auth import auth_bp
+from controllers.api import api_bp
 
-# Add parent directory to path for imports
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-
-from backend.config import Config
-from backend.utils.db import init_db, ensure_sessions_dir
-from backend.controllers.api import api_bp
-from backend.controllers.auth import auth_bp
-
-# Logging konfigurieren
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
-print("🚀 Refactored App wird gestartet...")
+print("🚀 Zeiterfassung System wird gestartet...")
 
 def create_app():
-    app = Flask(__name__, 
-                static_folder=os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static'))
-    
-    # Load configuration
-    app.config.from_object(Config)
-    
-    # Set secret key and required environment variables
-    app.secret_key = os.environ.get('FLASK_SECRET_KEY')
-    app.config['CLIENT_ID'] = os.environ.get('CLIENT_ID')
-    app.config['CLIENT_SECRET'] = os.environ.get('CLIENT_SECRET')
-    
-    # Validate required environment variables
-    if not app.secret_key:
-        raise ValueError("FLASK_SECRET_KEY muss gesetzt sein!")
-    if not app.config['CLIENT_ID']:
-        raise ValueError("CLIENT_ID muss gesetzt sein!")
-    if not app.config['CLIENT_SECRET']:
-        raise ValueError("CLIENT_SECRET muss gesetzt sein!")
-    
-    # Initialize CORS
-    CORS(app, origins=Config.CORS_ORIGINS)
-    
-    # Register blueprints
-    app.register_blueprint(api_bp, url_prefix='/api')
-    app.register_blueprint(auth_bp, url_prefix='/auth')
-    
-    # Initialize database
+    static_folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static')
+    app = Flask(__name__, static_folder=static_folder, static_url_path='')
+
+    app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key')
+    app.config['CLIENT_ID'] = os.environ.get('CLIENT_ID', 'dev-client-id')
+    app.config['CLIENT_SECRET'] = os.environ.get('CLIENT_SECRET', 'dev-client-secret')
+
+    CORS(app, origins=['*'])
+
     with app.app_context():
-        init_db()
-        ensure_sessions_dir()
-    
-    # Health check endpoint
+        try:
+            init_database()
+            logger.info("Database initialized successfully")
+            setup_demo_users()
+            logger.info("Demo users setup completed")
+        except Exception as e:
+            logger.error(f"Database initialization failed: {e}")
+            raise
+
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(api_bp)
+
     @app.route('/health')
     def health_check():
         return jsonify({
             "message": "Zeiterfassung System läuft!",
             "status": "healthy",
-            "environment": os.environ.get('FLASK_ENV', 'production')
+            "version": "v2.0",
+            "database": "connected"
         })
-    
-    # Serve static files with cache busting
-    @app.route('/static/<path:filename>')
-    def static_files(filename):
-        # Check if file exists in static folder
-        static_path = os.path.join(app.static_folder, filename)
-        if not os.path.exists(static_path):
-            return "Not Found", 404
-        
-        response = send_from_directory(app.static_folder, filename)
-        # Add cache busting headers
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
-        return response
-    
-    # Serve nested static files (static/static/)
-    @app.route('/static/static/<path:filename>')
-    def nested_static_files(filename):
-        nested_static_folder = os.path.join(app.static_folder, 'static')
-        static_path = os.path.join(nested_static_folder, filename)
-        if not os.path.exists(static_path):
-            return "Not Found", 404
-        
-        response = send_from_directory(nested_static_folder, filename)
-        # Add cache busting headers
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
-        return response
-    
-    # Catch-all route for SPA
-    @app.route('/', defaults={'path': ''})
-    @app.route('/<path:path>')
-    def catch_all(path):
-        # Don't serve index.html for API routes
-        if path.startswith('api/') or path.startswith('auth/') or path == 'health':
-            return "Not Found", 404
-        
-        # Serve index.html for all other routes (SPA routing)
+
+    @app.route('/api/status')
+    def api_status():
+        return jsonify({
+            "status": "API läuft",
+            "endpoints": {
+                "auth": "/api/auth",
+                "timeclock": "/api/timeclock",
+                "reports": "/api/reports"
+            }
+        })
+
+    @app.route('/')
+    def serve_frontend():
         return send_from_directory(app.static_folder, 'index.html')
-    
+
+    @app.route('/<path:path>')
+    def serve_static(path):
+        if os.path.exists(os.path.join(app.static_folder, path)):
+            return send_from_directory(app.static_folder, path)
+        return send_from_directory(app.static_folder, 'index.html')
+
     return app
 
 app = create_app()
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5001))
-    app.run(host='0.0.0.0', port=port, debug=True) 
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000))) 

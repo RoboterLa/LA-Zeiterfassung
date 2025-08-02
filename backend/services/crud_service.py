@@ -1,190 +1,313 @@
-from typing import Dict, List, Any, Optional
-from backend.utils.db import get_db_connection
-from backend.utils.auth import get_current_user
-import sqlite3
-from flask import has_request_context
+from typing import List, Optional, Type, TypeVar, Generic, Dict, Any
+from sqlalchemy.orm import Session
+from sqlalchemy import and_, or_
+from models import Base, User, TimeRecord, WorkReport, JobSite, AbsenceRequest, UserRole, TimeRecordStatus, WorkReportStatus, AbsenceStatus
+from utils.db import db_manager
+from datetime import datetime, timedelta
+import logging
 
-class GenericCrudService:
-    """Generischer CRUD-Service für alle Entitäten"""
+logger = logging.getLogger(__name__)
+
+T = TypeVar('T', bound=Base)
+
+class GenericCrudService(Generic[T]):
+    """Generischer CRUD Service für alle Models"""
     
-    def __init__(self, table_name: str):
-        self.table_name = table_name
-        # Nur User setzen wenn Request-Context existiert
-        self.user = get_current_user() if has_request_context() else None
+    def __init__(self, model: Type[T]):
+        self.model = model
     
-    def get_current_user_safe(self):
-        """Sichere User-Abfrage mit Request-Context-Check"""
-        if has_request_context():
-            return get_current_user()
-        return None
-    
-    def get_all(self, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
-        """Holt alle Einträge mit optionalen Filtern"""
-        conn = get_db_connection()
-        
-        query = f'SELECT * FROM {self.table_name}'
-        params = []
-        
-        if filters:
-            conditions = []
-            for key, value in filters.items():
-                if value != 'all':
-                    if key == 'status' and value == 'done':
-                        conditions.append('done = 1')
-                    elif key == 'status' and value == 'pending':
-                        conditions.append('done = 0')
-                    else:
-                        conditions.append(f'{key} = ?')
-                        params.append(value)
-            
-            if conditions:
-                query += ' WHERE ' + ' AND '.join(conditions)
-        
-        query += ' ORDER BY created_at DESC'
-        
-        cursor = conn.execute(query, params)
-        rows = cursor.fetchall()
-        
-        result = []
-        for row in rows:
-            item = dict(row)
-            # Boolean-Konvertierung für done-Felder
-            if 'done' in item:
-                item['done'] = bool(item['done'])
-            if 'emergency_week' in item:
-                item['emergency_week'] = bool(item['emergency_week'])
-            result.append(item)
-        
-        conn.close()
-        return result
-    
-    def get_by_id(self, item_id: Any) -> Optional[Dict[str, Any]]:
-        """Holt einen Eintrag nach ID"""
-        conn = get_db_connection()
-        
-        cursor = conn.execute(f'SELECT * FROM {self.table_name} WHERE id = ?', (item_id,))
-        row = cursor.fetchone()
-        
-        if row:
-            item = dict(row)
-            if 'done' in item:
-                item['done'] = bool(item['done'])
-            if 'emergency_week' in item:
-                item['emergency_week'] = bool(item['emergency_week'])
-            conn.close()
-            return item
-        
-        conn.close()
-        return None
-    
-    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def create(self, data: Dict[str, Any]) -> T:
         """Erstellt einen neuen Eintrag"""
-        conn = get_db_connection()
-        
-        # Füge Benutzer hinzu, falls nicht vorhanden
-        current_user = self.get_current_user_safe()
-        if 'mitarbeiter' not in data and current_user:
-            data['mitarbeiter'] = current_user.get('email')
-        
-        # Entferne None-Werte
-        data = {k: v for k, v in data.items() if v is not None}
-        
-        columns = ', '.join(data.keys())
-        placeholders = ', '.join(['?' for _ in data])
-        values = list(data.values())
-        
-        query = f'INSERT INTO {self.table_name} ({columns}) VALUES ({placeholders})'
-        
-        cursor = conn.execute(query, values)
-        conn.commit()
-        
-        new_id = cursor.lastrowid
-        conn.close()
-        
-        return {'success': True, 'id': new_id}
+        session = db_manager.get_session()
+        try:
+            instance = self.model(**data)
+            session.add(instance)
+            session.commit()
+            session.refresh(instance)
+            logger.info(f"Created {self.model.__name__}: {instance.id}")
+            return instance
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Failed to create {self.model.__name__}: {e}")
+            raise
+        finally:
+            db_manager.close_session(session)
     
-    def update(self, item_id: Any, data: Dict[str, Any]) -> Dict[str, Any]:
+    def get_by_id(self, id: int) -> Optional[T]:
+        """Holt einen Eintrag nach ID"""
+        session = db_manager.get_session()
+        try:
+            return session.query(self.model).filter(self.model.id == id).first()
+        finally:
+            db_manager.close_session(session)
+    
+    def get_all(self, limit: Optional[int] = None, offset: Optional[int] = None) -> List[T]:
+        """Holt alle Einträge mit optionaler Pagination"""
+        session = db_manager.get_session()
+        try:
+            query = session.query(self.model)
+            if offset:
+                query = query.offset(offset)
+            if limit:
+                query = query.limit(limit)
+            return query.all()
+        finally:
+            db_manager.close_session(session)
+    
+    def get_by_filters(self, filters: Dict[str, Any], limit: Optional[int] = None) -> List[T]:
+        """Holt Einträge nach Filtern"""
+        session = db_manager.get_session()
+        try:
+            query = session.query(self.model)
+            
+            for key, value in filters.items():
+                if hasattr(self.model, key):
+                    if isinstance(value, list):
+                        query = query.filter(getattr(self.model, key).in_(value))
+                    else:
+                        query = query.filter(getattr(self.model, key) == value)
+            
+            if limit:
+                query = query.limit(limit)
+            
+            return query.all()
+        finally:
+            db_manager.close_session(session)
+    
+    def update(self, id: int, data: Dict[str, Any]) -> Optional[T]:
         """Aktualisiert einen Eintrag"""
-        conn = get_db_connection()
-        
-        # Entferne None-Werte
-        data = {k: v for k, v in data.items() if v is not None}
-        
-        if not data:
-            conn.close()
-            return {'error': 'Keine Daten zum Aktualisieren'}
-        
-        set_clause = ', '.join([f'{k} = ?' for k in data.keys()])
-        values = list(data.values()) + [item_id]
-        
-        query = f'UPDATE {self.table_name} SET {set_clause} WHERE id = ?'
-        
-        cursor = conn.execute(query, values)
-        conn.commit()
-        conn.close()
-        
-        return {'success': True}
+        session = db_manager.get_session()
+        try:
+            instance = session.query(self.model).filter(self.model.id == id).first()
+            if not instance:
+                return None
+            
+            for key, value in data.items():
+                if hasattr(instance, key):
+                    setattr(instance, key, value)
+            
+            session.commit()
+            session.refresh(instance)
+            logger.info(f"Updated {self.model.__name__}: {id}")
+            return instance
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Failed to update {self.model.__name__} {id}: {e}")
+            raise
+        finally:
+            db_manager.close_session(session)
     
-    def delete(self, item_id: Any) -> Dict[str, Any]:
+    def delete(self, id: int) -> bool:
         """Löscht einen Eintrag"""
-        conn = get_db_connection()
-        
-        cursor = conn.execute(f'DELETE FROM {self.table_name} WHERE id = ?', (item_id,))
-        conn.commit()
-        conn.close()
-        
-        return {'success': True}
+        session = db_manager.get_session()
+        try:
+            instance = session.query(self.model).filter(self.model.id == id).first()
+            if not instance:
+                return False
+            
+            session.delete(instance)
+            session.commit()
+            logger.info(f"Deleted {self.model.__name__}: {id}")
+            return True
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Failed to delete {self.model.__name__} {id}: {e}")
+            raise
+        finally:
+            db_manager.close_session(session)
+    
+    def count(self, filters: Optional[Dict[str, Any]] = None) -> int:
+        """Zählt Einträge mit optionalen Filtern"""
+        session = db_manager.get_session()
+        try:
+            query = session.query(self.model)
+            
+            if filters:
+                for key, value in filters.items():
+                    if hasattr(self.model, key):
+                        if isinstance(value, list):
+                            query = query.filter(getattr(self.model, key).in_(value))
+                        else:
+                            query = query.filter(getattr(self.model, key) == value)
+            
+            return query.count()
+        finally:
+            db_manager.close_session(session)
+    
+    def exists(self, id: int) -> bool:
+        """Prüft ob ein Eintrag existiert"""
+        session = db_manager.get_session()
+        try:
+            return session.query(self.model).filter(self.model.id == id).first() is not None
+        finally:
+            db_manager.close_session(session)
 
-class AuftraegeService(GenericCrudService):
-    """Spezialisierter Service für Aufträge"""
+# Spezialisierte Services für spezifische Models
+class UserService(GenericCrudService):
+    """Service für User-spezifische Operationen"""
     
     def __init__(self):
-        super().__init__('auftraege')
+        super().__init__(User)
     
-    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Überschreibt create für Aufträge-spezifische Logik"""
-        # Setze Standardwerte
-        data.setdefault('coords', '[]')
-        data.setdefault('details', '')
-        data.setdefault('priority', 'normal')
-        data.setdefault('done', False)
-        
-        return super().create(data)
+    def get_by_username(self, username: str):
+        """Holt User nach Username"""
+        session = db_manager.get_session()
+        try:
+            return session.query(User).filter(
+                or_(User.username == username, User.email == username)
+            ).first()
+        finally:
+            db_manager.close_session(session)
+    
+    def get_by_role(self, role: str):
+        """Holt alle User einer bestimmten Rolle"""
+        session = db_manager.get_session()
+        try:
+            return session.query(User).filter(User.role == role).all()
+        finally:
+            db_manager.close_session(session)
 
-class ZeiterfassungService(GenericCrudService):
-    """Spezialisierter Service für Zeiterfassung"""
+class TimeRecordService(GenericCrudService):
+    """Service für TimeRecord-spezifische Operationen"""
     
     def __init__(self):
-        super().__init__('zeiterfassung')
+        super().__init__(TimeRecord)
     
-    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Überschreibt create für Zeiterfassung-spezifische Logik"""
-        data.setdefault('emergency_week', False)
-        data.setdefault('status', 'pending')
-        
-        return super().create(data)
+    def get_active_by_user(self, user_id: int):
+        """Holt aktive TimeRecord für einen User"""
+        session = db_manager.get_session()
+        try:
+            return session.query(TimeRecord).filter(
+                and_(
+                    TimeRecord.user_id == user_id,
+                    TimeRecord.status == TimeRecordStatus.ACTIVE
+                )
+            ).first()
+        finally:
+            db_manager.close_session(session)
+    
+    def get_by_user_and_date(self, user_id: int, date):
+        """Holt TimeRecords für User an einem bestimmten Datum"""
+        session = db_manager.get_session()
+        try:
+            return session.query(TimeRecord).filter(
+                and_(
+                    TimeRecord.user_id == user_id,
+                    TimeRecord.clock_in >= date.replace(hour=0, minute=0, second=0),
+                    TimeRecord.clock_in < date.replace(hour=23, minute=59, second=59)
+                )
+            ).all()
+        finally:
+            db_manager.close_session(session)
 
-class ArbeitszeitService(GenericCrudService):
-    """Spezialisierter Service für Arbeitszeit"""
+class WorkReportService(GenericCrudService):
+    """Service für WorkReport-spezifische Operationen"""
     
     def __init__(self):
-        super().__init__('arbeitszeit')
+        super().__init__(WorkReport)
     
-    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Überschreibt create für Arbeitszeit-spezifische Logik"""
-        data.setdefault('pause', '00:00')
-        
-        return super().create(data)
+    def get_pending_approvals(self, approver_id: int):
+        """Holt alle zur Freigabe anstehenden Berichte"""
+        session = db_manager.get_session()
+        try:
+            return session.query(WorkReport).filter(
+                WorkReport.status == WorkReportStatus.SUBMITTED
+            ).all()
+        finally:
+            db_manager.close_session(session)
+    
+    def approve_report(self, report_id: int, approver_id: int):
+        """Genehmigt einen Bericht"""
+        return self.update(report_id, {
+            'status': WorkReportStatus.APPROVED,
+            'approved_by': approver_id,
+            'approved_at': datetime.utcnow()
+        })
+    
+    def reject_report(self, report_id: int, approver_id: int, reason: str):
+        """Lehnt einen Bericht ab"""
+        return self.update(report_id, {
+            'status': WorkReportStatus.REJECTED,
+            'approved_by': approver_id,
+            'approved_at': datetime.utcnow(),
+            'rejection_reason': reason
+        })
 
-class UrlaubService(GenericCrudService):
-    """Spezialisierter Service für Urlaub"""
+class JobSiteService(GenericCrudService):
+    """Service für JobSite-spezifische Operationen"""
     
     def __init__(self):
-        super().__init__('urlaub')
+        super().__init__(JobSite)
     
-    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Überschreibt create für Urlaub-spezifische Logik"""
-        data.setdefault('typ', 'Urlaub')
-        data.setdefault('status', 'pending')
-        
-        return super().create(data) 
+    def get_active_sites(self):
+        """Holt alle aktiven JobSites"""
+        session = db_manager.get_session()
+        try:
+            return session.query(JobSite).filter(JobSite.is_active == True).all()
+        finally:
+            db_manager.close_session(session)
+    
+    def get_sites_by_region(self, region: str):
+        """Holt JobSites nach Region"""
+        session = db_manager.get_session()
+        try:
+            return session.query(JobSite).filter(
+                JobSite.region == region,
+                JobSite.is_active == True
+            ).all()
+        finally:
+            db_manager.close_session(session)
+
+class AbsenceRequestService(GenericCrudService):
+    """Service für AbsenceRequest-spezifische Operationen"""
+    
+    def __init__(self):
+        super().__init__(AbsenceRequest)
+    
+    def get_by_user_and_period(self, user_id: int, start_date: datetime, end_date: datetime):
+        """Holt Abwesenheitsanfragen für einen User in einem bestimmten Zeitraum"""
+        session = db_manager.get_session()
+        try:
+            return session.query(AbsenceRequest).filter(
+                and_(
+                    AbsenceRequest.user_id == user_id,
+                    AbsenceRequest.start_date <= end_date,
+                    AbsenceRequest.end_date >= start_date
+                )
+            ).all()
+        finally:
+            db_manager.close_session(session)
+    
+    def get_pending_approvals(self, approver_id: int):
+        """Holt alle zur Freigabe anstehenden Abwesenheitsanfragen"""
+        session = db_manager.get_session()
+        try:
+            return session.query(AbsenceRequest).filter(
+                AbsenceRequest.status == AbsenceStatus.PENDING
+            ).all()
+        finally:
+            db_manager.close_session(session)
+    
+    def approve_request(self, request_id: int, approver_id: int):
+        """Genehmigt eine Abwesenheitsanfrage"""
+        return self.update(request_id, {
+            'status': AbsenceStatus.APPROVED,
+            'approved_by': approver_id,
+            'approved_at': datetime.utcnow()
+        })
+    
+    def reject_request(self, request_id: int, approver_id: int, reason: str):
+        """Lehnt eine Abwesenheitsanfrage ab"""
+        return self.update(request_id, {
+            'status': AbsenceStatus.REJECTED,
+            'approved_by': approver_id,
+            'approved_at': datetime.utcnow(),
+            'rejection_reason': reason
+        })
+
+# Service Instances
+user_service = UserService()
+time_record_service = TimeRecordService()
+work_report_service = WorkReportService()
+job_site_service = JobSiteService()
+absence_request_service = AbsenceRequestService() 
