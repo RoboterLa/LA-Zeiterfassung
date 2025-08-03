@@ -11,6 +11,7 @@ from backend.config import Config
 from backend.utils.db import init_db, ensure_sessions_dir
 from backend.controllers.api import api_bp
 from backend.controllers.auth import auth_bp
+from backend.controllers.modules_api import modules_bp
 
 # Logging konfigurieren
 logging.basicConfig(level=logging.DEBUG)
