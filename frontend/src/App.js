@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './App.css';
+import MonteurDashboard from './components/MonteurDashboard';
 
 // API Configuration
 axios.defaults.baseURL = process.env.REACT_APP_API_URL || '';
@@ -23,22 +24,34 @@ const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      // Simulate login for now
-      const mockUser = {
-        id: 1,
-        username: username,
-        role: username === 'admin' ? 'admin' : 'monteur',
-        name: username === 'admin' ? 'Administrator' : 'Monteur'
-      };
-      setUser(mockUser);
-      return { success: true, user: mockUser };
+      const response = await axios.post('/api/auth/login', {
+        email: username,
+        password: password
+      });
+      
+      if (response.data.success) {
+        setUser(response.data.user);
+        return { success: true, user: response.data.user, redirect: response.data.redirect };
+      } else {
+        return { success: false, error: response.data.error || 'Login fehlgeschlagen' };
+      }
     } catch (error) {
-      return { success: false, error: error.message };
+      console.error('Login error:', error);
+      return { 
+        success: false, 
+        error: error.response?.data?.error || 'Verbindungsfehler' 
+      };
     }
   };
 
-  const logout = () => {
-    setUser(null);
+  const logout = async () => {
+    try {
+      await axios.post('/api/auth/logout');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null);
+    }
   };
 
   const checkAuth = async () => {
@@ -73,14 +86,20 @@ const AuthProvider = ({ children }) => {
 // Components
 const LoginPage = () => {
   const { login } = useAuth();
+  const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    
     const result = await login(username, password);
-    if (!result.success) {
+    if (result.success) {
+      console.log('Login successful, redirecting to dashboard');
+      navigate('/dashboard');
+    } else {
       setError(result.error);
     }
   };
@@ -106,7 +125,7 @@ const LoginPage = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="beliebiges Passwort"
+              placeholder="admin123 oder monteur123"
               required
             />
           </div>
@@ -117,8 +136,10 @@ const LoginPage = () => {
         </form>
         <div style={{ marginTop: '20px', fontSize: '14px', color: '#666' }}>
           <p><strong>Test-Accounts:</strong></p>
-          <p>Admin: admin / beliebiges Passwort</p>
-          <p>Monteur: monteur / beliebiges Passwort</p>
+          <p>Admin: admin / admin123</p>
+          <p>Monteur: monteur / monteur123</p>
+          <p>Büro: buero / buero123</p>
+          <p>Lohn: lohn / lohn123</p>
         </div>
       </div>
     </div>
@@ -127,25 +148,37 @@ const LoginPage = () => {
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   if (!user) {
     return <Navigate to="/" />;
   }
 
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
+
+  // Render different dashboards based on user role
+  if (user.role === 'Monteur') {
+    return <MonteurDashboard />;
+  }
+
+  // Default dashboard for other roles
   return (
     <div>
       <div className="header">
         <div className="container">
           <h1>Lackner Aufzüge - Dashboard</h1>
           <p>Willkommen, {user.name} ({user.role})</p>
-          <button onClick={logout} className="btn btn-primary">Abmelden</button>
+          <button onClick={handleLogout} className="btn btn-primary">Abmelden</button>
         </div>
       </div>
       <div className="container">
         <div className="card">
           <h2>Dashboard v1.0 - Clean Version</h2>
           <p>Dies ist eine saubere, neue Version des Zeiterfassung-Systems.</p>
-          <p><strong>Benutzer:</strong> {user.username}</p>
+          <p><strong>Benutzer:</strong> {user.email}</p>
           <p><strong>Rolle:</strong> {user.role}</p>
           <p><strong>Version:</strong> Clean v1.0</p>
         </div>

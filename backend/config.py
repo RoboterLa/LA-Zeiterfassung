@@ -1,49 +1,57 @@
 import os
-from typing import List
 
 class Config:
-    """Flask-Konfiguration für die Zeiterfassung-App"""
+    """Flask Configuration"""
     
-    # Flask-Konfiguration
-    SECRET_KEY = os.getenv('FLASK_SECRET_KEY', 'default_secret_key')
-    DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
+    # Basic Flask Config
+    SECRET_KEY = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key')
+    DEBUG = False
     
-    # CORS-Konfiguration für React-Frontend
-    CORS_ORIGINS: List[str] = [
-        'http://localhost:3000',
-        'https://localhost:3000', 
-        'http://localhost:8000',
-        'https://localhost:8000',
-        'http://192.168.50.99:3000',
-        'http://localhost:3001',
-        'https://localhost:3001',
-        'http://192.168.50.99:3001',
-        'https://la-zeiterfassung-fyd4cge3d9e3cac4.azurewebsites.net',
-        'http://la-zeiterfassung-fyd4cge3d9e3cac4.azurewebsites.net',
-        '*'
+    # Database
+    DATABASE_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'zeiterfassung.db')
+    
+    # CORS
+    CORS_ORIGINS = [
+        "http://localhost:3000",
+        "http://localhost:8080",
+        "https://la-zeiterfassung-fyd4cge3d9e3cac4.azurewebsites.net"
     ]
     
-    CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization']
-    CORS_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
-    CORS_SUPPORTS_CREDENTIALS = True
-    
-    # Datenbank-Konfiguration
-    DATABASE_PATH = 'zeiterfassung.db'
-    
-    # Session-Konfiguration für Azure
+    # Session Config
     SESSION_TYPE = 'filesystem'
-    SESSION_FILE_DIR = '/tmp/sessions'
+    SESSION_FILE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'sessions')
     
-    # Test-User (später in Datenbank migrieren)
+    # Test Users (erweitert für Frontend-Kompatibilität)
     TEST_USERS = {
+        'admin@test.com': {
+            'password': 'test123',
+            'name': 'Admin Test',
+            'role': 'Admin'
+        },
         'monteur@test.com': {
             'password': 'test123',
             'name': 'Monteur Test',
             'role': 'Monteur'
         },
-        'admin@test.com': {
-            'password': 'test123',
-            'name': 'Admin Test',
+        # Frontend-kompatible Versionen
+        'admin': {
+            'password': 'admin123',
+            'name': 'Administrator',
             'role': 'Admin'
+        },
+        'monteur': {
+            'password': 'monteur123',
+            'name': 'Monteur',
+            'role': 'Monteur'
+        },
+        'buero': {
+            'password': 'buero123',
+            'name': 'Büroangestellte',
+            'role': 'Büroangestellte'
+        },
+        'lohn': {
+            'password': 'lohn123',
+            'name': 'Lohnbuchhalter',
+            'role': 'Lohnbuchhalter'
         }
-    } 
+    }

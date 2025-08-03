@@ -3,7 +3,7 @@ from typing import Dict, Any
 from backend.config import Config
 
 # Blueprint für Auth-Routes
-auth_bp = Blueprint('auth', __name__, url_prefix='/api')
+auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
@@ -49,4 +49,4 @@ def me():
     return jsonify({
         'user': session['user'],
         'authenticated': True
-    }) 
+    })
