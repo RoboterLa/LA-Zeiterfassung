@@ -1,0 +1,7 @@
+Backup erstellt am: Mon Aug  4 23:23:02 CEST 2025
+Features im Backup:
+- Monteur Dashboard (vollständig funktional)
+- Büro Dashboard (vollständig implementiert)
+- Zeiterfassung, Arbeitszeit, Aufträge Seiten
+- Notfallverwaltung
+- Stammdaten-Verwaltung

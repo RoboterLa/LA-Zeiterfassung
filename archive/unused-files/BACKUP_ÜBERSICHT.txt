@@ -1,0 +1,88 @@
+================================================================================
+ZEITERFASSUNG-APP BACKUP ÜBERSICHT
+================================================================================
+
+DATUM: 05.08.2025
+STATUS: AKTUELLE BACKUP-ÜBERSICHT
+
+================================================================================
+VERFÜGBARE BACKUPS
+================================================================================
+
+1. BACKUP_20250804_232212 (04.08.2025 23:22:12)
+   - Status: Ältere Version
+   - Enthält: Backend mit Datenbank-Abhängigkeiten
+   - Verwendung: Referenz für ursprüngliche Struktur
+
+2. BACKUP_20250805_135000 (05.08.2025 13:50:00) ⭐ AKTUELL FUNKTIONIEREND
+   - Status: ✅ FUNKTIONIERENDE AZURE-VERSION
+   - URL: https://zeiterfassung-app.azurewebsites.net
+   - Enthält: 
+     * app_azure.py (Mock-Daten, funktioniert auf Azure)
+     * Korrekte Route-Reihenfolge
+     * Alle statischen Dateien
+     * Azure-Konfiguration
+   - Verwendung: PRODUKTIONS-VERSION
+
+================================================================================
+AKTUELLE STATUS
+================================================================================
+
+✅ APP LÄUFT ERFOLGREICH AUF AZURE
+✅ FRONTEND LÄDT KORREKT
+✅ STATISCHE DATEIEN WERDEN SERVIERT
+✅ HEALTH CHECK FUNKTIONIERT
+✅ MOCK-DATEN FUNKTIONIEREN
+
+================================================================================
+WICHTIGE DATEIEN IM AKTUELLEN BACKUP
+================================================================================
+
+Backend (backup_20250805_135000/backend/):
+- app_azure.py: Hauptanwendung (11.959 Bytes)
+- requirements.txt: Dependencies
+- startup.sh: Azure Startup-Script
+- web.config: Azure App Service Konfiguration
+- runtime.txt: Python 3.9
+- Procfile: Gunicorn Konfiguration
+- build/: Frontend-Build-Dateien
+
+Frontend (backup_20250805_135000/frontend/):
+- src/: React Source Code
+- package.json: Dependencies
+- public/: Statische Assets
+
+================================================================================
+DEPLOYMENT-ANLEITUNG
+================================================================================
+
+Für Wiederherstellung der funktionierenden Version:
+
+1. Backup verwenden: backup_20250805_135000/
+2. Deployment-Befehl:
+   ```bash
+   cd backup_20250805_135000/backend
+   zip -r ../../zeiterfassung-restore.zip . -x "__pycache__/*" "*.db" "venv/*"
+   az webapp deploy --resource-group zeiterfassung-rg --name zeiterfassung-app --src-path ../../zeiterfassung-restore.zip
+   ```
+
+3. Health Check:
+   ```bash
+   curl https://zeiterfassung-app.azurewebsites.net/health
+   ```
+
+================================================================================
+TEST-ACCOUNTS
+================================================================================
+
+Monteur:
+- Email: monteur
+- Password: monteur
+
+Büro:
+- Email: buero
+- Password: buero
+
+================================================================================
+ENDE DER ÜBERSICHT
+================================================================================ 

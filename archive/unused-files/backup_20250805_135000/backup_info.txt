@@ -1,0 +1,96 @@
+================================================================================
+ZEITERFASSUNG-APP BACKUP
+================================================================================
+
+DATUM: 05.08.2025 13:50:00
+VERSION: FUNKTIONIERENDE AZURE-VERSION
+STATUS: ERFOLGREICH DEPLOYED
+
+================================================================================
+BACKUP-DETAILS
+================================================================================
+
+Dieses Backup enthält die funktionierende Azure-Version der Zeiterfassung-App.
+
+URL: https://zeiterfassung-app.azurewebsites.net
+Status: ✅ LIVE UND FUNKTIONSFÄHIG
+
+================================================================================
+WICHTIGE DATEIEN
+================================================================================
+
+Backend:
+- app_azure.py: Hauptanwendung mit Mock-Daten (funktioniert auf Azure)
+- requirements.txt: Dependencies ohne pyodbc
+- startup.sh: Azure Startup-Script
+- web.config: Azure App Service Konfiguration
+- runtime.txt: Python 3.9
+- Procfile: Gunicorn Konfiguration
+
+Frontend:
+- build/: Gebaute React-App
+- src/: React Source Code
+- package.json: Dependencies
+
+================================================================================
+AZURE-KONFIGURATION
+================================================================================
+
+Startup Command: gunicorn --bind=0.0.0.0 --timeout 600 app_azure:app
+Port: $PORT (Azure Environment Variable)
+Runtime: Python 3.11
+Status: ✅ FUNKTIONIERT
+
+================================================================================
+TEST-ACCOUNTS
+================================================================================
+
+Monteur:
+- Email: monteur
+- Password: monteur
+
+Büro:
+- Email: buero
+- Password: buero
+
+================================================================================
+FEATURES
+================================================================================
+
+✅ Health Check: /health
+✅ Authentication: /api/auth/*
+✅ Monteur APIs: /api/monteur/*
+✅ Büro APIs: /api/buero/*
+✅ Frontend: React App lädt korrekt
+✅ Statische Dateien: Werden korrekt serviert
+✅ Mock-Daten: Funktioniert ohne Datenbank
+
+================================================================================
+DEPLOYMENT-BEFEHLE
+================================================================================
+
+Azure Deployment:
+```bash
+cd backend
+zip -r ../zeiterfassung-backup-deployment.zip . -x "__pycache__/*" "*.db" "venv/*"
+az webapp deploy --resource-group zeiterfassung-rg --name zeiterfassung-app --src-path zeiterfassung-backup-deployment.zip
+```
+
+Health Check:
+```bash
+curl https://zeiterfassung-app.azurewebsites.net/health
+```
+
+================================================================================
+NOTIZEN
+================================================================================
+
+- Diese Version verwendet Mock-Daten (keine Datenbank-Abhängigkeit)
+- app_azure.py ist die Hauptanwendung
+- Route-Reihenfolge ist korrekt (statische Dateien vor Hauptroute)
+- Alle statischen Dateien werden korrekt serviert
+- Frontend lädt ohne Probleme
+
+================================================================================
+ENDE DES BACKUPS
+================================================================================ 

@@ -1,0 +1,323 @@
+================================================================================
+ZEITERFASSUNG-APP AZURE DEPLOYMENT DOKUMENTATION
+================================================================================
+
+DATUM: 05.08.2025
+VERSION: 1.0
+STATUS: ERFOLGREICH DEPLOYED
+
+================================================================================
+1. PROJEKTÜBERSICHT
+================================================================================
+
+Projektname: Lackner Aufzüge - Zeiterfassung System
+Backend: Flask (Python)
+Frontend: React (JavaScript)
+Deployment: Azure App Service
+Datenbank: Azure SQL Database (geplant, aktuell Mock-Daten)
+
+URL: https://zeiterfassung-app.azurewebsites.net
+
+================================================================================
+2. TECHNISCHE ARCHITEKTUR
+================================================================================
+
+2.1 Backend (Flask):
+- Framework: Flask 2.3.3
+- WSGI Server: Gunicorn 21.2.0
+- CORS: Flask-CORS 4.0.0
+- Datenbank: pyodbc 4.0.39 (für SQL Server)
+- Environment: python-dotenv 1.0.0
+
+2.2 Frontend (React):
+- Framework: React 19.1.1
+- Build Tool: Create React App
+- HTTP Client: Axios
+- Styling: CSS3 mit responsivem Design
+
+2.3 Azure Services:
+- App Service: B1 Tier (Linux)
+- Region: North Europe
+- Resource Group: zeiterfassung-rg
+
+================================================================================
+3. DEPLOYMENT-PROZESS
+================================================================================
+
+3.1 Vorbereitung:
+- Azure CLI Installation und Login
+- Projektstruktur vorbereitet
+- Frontend Build erstellt
+- Backend Dependencies definiert
+
+3.2 Azure Resource Group:
+```bash
+az group create --name zeiterfassung-rg --location "North Europe"
+```
+
+3.3 Azure App Service:
+```bash
+az webapp create \
+  --resource-group zeiterfassung-rg \
+  --name zeiterfassung-app \
+  --runtime "PYTHON:3.11" \
+  --plan zeiterfassung-plan \
+  --sku B1
+```
+
+3.4 Konfiguration:
+- Startup Command: gunicorn --bind=0.0.0.0 --timeout 600 app_azure:app
+- Environment Variables: SCM_DO_BUILD_DURING_DEPLOYMENT=true
+- Public Network Access: Enabled
+
+================================================================================
+4. HAUPTDATEIEN UND IHRE FUNKTIONEN
+================================================================================
+
+4.1 Backend (backend/):
+
+app_azure.py:
+- Hauptanwendung mit Flask
+- API Endpoints für Authentication, Monteur, Büro
+- Frontend-Serving für React App
+- Mock-Daten für Entwicklung
+
+Wichtige Endpoints:
+- /health - Health Check
+- /api/auth/login - Benutzeranmeldung
+- /api/monteur/* - Monteur-spezifische APIs
+- /api/buero/* - Büro-spezifische APIs
+- /static/* - Statische Dateien (CSS, JS)
+
+requirements.txt:
+```
+Flask==2.3.3
+Flask-CORS==4.0.0
+pyodbc==4.0.39
+python-dotenv==1.0.0
+Werkzeug==2.3.7
+gunicorn==21.2.0
+```
+
+startup.sh:
+```bash
+#!/bin/bash
+cd /home/site/wwwroot
+python -m gunicorn --bind=0.0.0.0 --timeout 600 app_azure:app
+```
+
+4.2 Frontend (frontend/):
+
+MonteurDashboard.js:
+- Hauptdashboard für Monteure
+- Zeiterfassung (Ein-/Ausstempeln)
+- Auftragsverwaltung
+- Arbeitszeit-Tracking
+- Wetter-Widget
+- Notfälle/Störungen
+
+BueroDashboard.js:
+- Dashboard für Büromitarbeiter
+- Auftragserstellung und -zuweisung
+- Notfallverwaltung
+- Zeiterfassung-Einsicht
+- Stammdatenverwaltung
+
+App.js:
+- Hauptanwendung
+- Authentication Management
+- Routing zwischen Dashboards
+- API-Konfiguration
+
+================================================================================
+5. LÖSUNG VON DEPLOYMENT-PROBLEMEN
+================================================================================
+
+5.1 Problem: "Application Error" auf Azure
+Lösung:
+- Korrekte Startup-Konfiguration
+- Gunicorn als WSGI Server
+- Timeout-Einstellungen
+
+5.2 Problem: Statische Dateien nicht gefunden
+Lösung:
+- Separate Routen für /static/js/ und /static/css/
+- Korrekte Verwendung von send_from_directory
+- Build-Ordner in Backend integriert
+
+5.3 Problem: "Starting the site..." hängt
+Lösung:
+- Timeout-Parameter in Gunicorn
+- Korrekte App-Settings
+- Deployment ohne Timeout-Limits
+
+5.4 Problem: Frontend zeigt weiße Seite
+Lösung:
+- Korrekte Route-Struktur für React Router
+- Statische Dateien korrekt serviert
+- API_BASE_URL für Production gesetzt
+
+================================================================================
+6. TEST-ACCOUNTS
+================================================================================
+
+Monteur:
+- Email: monteur@lackner.com
+- Password: monteur123
+
+Büro:
+- Email: buero@lackner.com
+- Password: buero123
+
+Admin:
+- Email: admin@lackner.com
+- Password: admin123
+
+Lohn:
+- Email: lohn@lackner.com
+- Password: lohn123
+
+================================================================================
+7. FEATURES UND FUNKTIONALITÄTEN
+================================================================================
+
+7.1 Monteur Dashboard:
+- Zeiterfassung (Ein-/Ausstempeln)
+- Arbeitszeit-Tracking
+- Auftragsverwaltung
+- Wetter-Widget
+- Notfälle/Störungen
+- Pausen-Management
+- Überstunden-Warnungen
+
+7.2 Büro Dashboard:
+- Auftragserstellung
+- Monteur-Zuweisung
+- Notfallverwaltung
+- Zeiterfassung-Einsicht
+- Stammdatenverwaltung
+- Übersicht aller Aktivitäten
+
+7.3 Allgemeine Features:
+- Responsive Design
+- Session Management
+- API-Integration
+- Mock-Daten für Entwicklung
+- Error Handling
+
+================================================================================
+8. DEPLOYMENT-BEFEHLE
+================================================================================
+
+8.1 Frontend Build:
+```bash
+cd frontend
+npm run build
+cp -r build ../backend/
+```
+
+8.2 Backend Package:
+```bash
+cd backend
+zip -r ../zeiterfassung-deployment.zip .
+```
+
+8.3 Azure Deployment:
+```bash
+az webapp deploy \
+  --resource-group zeiterfassung-rg \
+  --name zeiterfassung-app \
+  --src-path zeiterfassung-deployment.zip
+```
+
+8.4 Health Check:
+```bash
+curl https://zeiterfassung-app.azurewebsites.net/health
+```
+
+================================================================================
+9. MONITORING UND LOGS
+================================================================================
+
+9.1 Azure Logs:
+```bash
+az webapp log tail --resource-group zeiterfassung-rg --name zeiterfassung-app
+```
+
+9.2 App Settings:
+```bash
+az webapp config appsettings list \
+  --resource-group zeiterfassung-rg \
+  --name zeiterfassung-app
+```
+
+9.3 Deployment Status:
+```bash
+az webapp deployment list \
+  --resource-group zeiterfassung-rg \
+  --name zeiterfassung-app
+```
+
+================================================================================
+10. NÄCHSTE SCHRITTE
+================================================================================
+
+10.1 Datenbank-Integration:
+- Azure SQL Database einrichten
+- Connection String konfigurieren
+- Real-Daten statt Mock-Daten
+
+10.2 Erweiterte Features:
+- E-Mail-Benachrichtigungen
+- PDF-Export
+- Mobile App
+- Push-Benachrichtigungen
+
+10.3 Monitoring:
+- Application Insights
+- Performance Monitoring
+- Error Tracking
+
+10.4 Security:
+- HTTPS erzwingen
+- CORS-Konfiguration
+- Input Validation
+- SQL Injection Protection
+
+================================================================================
+11. TROUBLESHOOTING
+================================================================================
+
+11.1 App startet nicht:
+- Logs prüfen: az webapp log tail
+- Startup Command überprüfen
+- Requirements.txt prüfen
+- Port-Konfiguration prüfen
+
+11.2 Statische Dateien nicht gefunden:
+- Build-Ordner in Backend
+- Route-Struktur prüfen
+- send_from_directory verwenden
+
+11.3 API-Fehler:
+- CORS-Konfiguration
+- Session Management
+- Authentication prüfen
+
+11.4 Frontend-Fehler:
+- API_BASE_URL prüfen
+- Network Requests
+- Console Errors
+
+================================================================================
+12. KONTAKT UND SUPPORT
+================================================================================
+
+Projekt: Lackner Aufzüge - Zeiterfassung System
+Deployment: Azure App Service
+URL: https://zeiterfassung-app.azurewebsites.net
+Status: LIVE UND FUNKTIONSFÄHIG
+
+================================================================================
+ENDE DER DOKUMENTATION
+================================================================================ 

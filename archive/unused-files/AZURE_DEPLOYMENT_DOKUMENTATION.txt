@@ -1,0 +1,399 @@
+# ZEITERFASSUNG AZURE DEPLOYMENT DOKUMENTATION
+==================================================
+
+## 📅 ERSTELLT AM: 05.08.2025 13:26 Uhr
+## 🔄 VERSION: Vollständige App mit Datenbank-Integration
+## 🌐 LIVE URL: https://zeiterfassung-app.azurewebsites.net
+
+## 📋 PROJEKTÜBERSICHT
+=====================
+
+### Anwendung: Zeiterfassung-System für Monteure und Büro
+- **Frontend:** React.js mit modernem UI/UX
+- **Backend:** Flask (Python) mit SQLite-Datenbank
+- **Deployment:** Azure App Service (B1 Tier)
+- **Datenbank:** SQLite (eingebettet in App Service)
+
+### Benutzer-Rollen:
+- **Monteur:** Zeiterfassung, Aufträge, Arbeitszeit-Tracking
+- **Büro:** Auftragsverwaltung, Notfall-Management, Monteur-Verwaltung
+
+## 🚀 AZURE DEPLOYMENT DETAILS
+==============================
+
+### Resource Group:
+- **Name:** zeiterfassung-rg
+- **Location:** North Europe
+- **Erstellt:** 05.08.2025
+
+### App Service:
+- **Name:** zeiterfassung-app
+- **URL:** https://zeiterfassung-app.azurewebsites.net
+- **Tier:** B1 (Basic)
+- **Runtime:** Python 3.11
+- **Startup Command:** gunicorn --bind=0.0.0.0 --timeout 600 app_with_db:app
+
+### Datenbank:
+- **Typ:** SQLite (eingebettet)
+- **Datei:** zeiterfassung.db
+- **Tabellen:** users, time_entries, orders, emergencies, customers
+
+## 🔑 LOGIN-DATEN
+==================
+
+### Monteur:
+- **Email:** monteur
+- **Password:** monteur
+- **Rolle:** monteur
+
+### Büro:
+- **Email:** buero
+- **Password:** buero
+- **Rolle:** buero
+
+## 📁 PROJEKTSTRUKTUR
+=====================
+
+```
+zeiterfassung-clean/
+├── frontend/                    # React Frontend
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── MonteurDashboard.js
+│   │   │   ├── MonteurDashboard.css
+│   │   │   ├── BueroDashboard.js
+│   │   │   └── BueroDashboard.css
+│   │   └── App.js
+│   └── build/                   # Production Build
+├── backend/                     # Flask Backend
+│   ├── app_with_db.py          # Haupt-App mit Datenbank
+│   ├── database_setup.py       # Datenbank-Initialisierung
+│   ├── startup.sh              # Azure Startup Script
+│   ├── requirements.txt        # Python Dependencies
+│   ├── zeiterfassung.db        # SQLite Datenbank
+│   └── build/                  # Frontend Build (kopiert)
+└── AZURE_DEPLOYMENT_DOKUMENTATION.txt
+```
+
+## 🛠️ DEPLOYMENT COMMANDS
+=========================
+
+### 1. Resource Group erstellen:
+```bash
+az group create --name zeiterfassung-rg --location "North Europe"
+```
+
+### 2. App Service erstellen:
+```bash
+az webapp create --resource-group zeiterfassung-rg --name zeiterfassung-app --plan zeiterfassung-plan --runtime "PYTHON|3.11"
+```
+
+### 3. App Service konfigurieren:
+```bash
+az webapp config set --resource-group zeiterfassung-rg --name zeiterfassung-app --startup-file "gunicorn --bind=0.0.0.0 --timeout 600 app_with_db:app"
+```
+
+### 4. Deployment durchführen:
+```bash
+# Frontend bauen
+cd frontend && npm run build
+
+# Build in Backend kopieren
+cd ../backend && rm -rf build && cp -r ../frontend/build .
+
+# ZIP erstellen
+zip -r ../zeiterfassung-deployment.zip .
+
+# Deployen
+az webapp deploy --resource-group zeiterfassung-rg --name zeiterfassung-app --src-path zeiterfassung-deployment.zip
+```
+
+## 🔧 KONFIGURATION
+===================
+
+### Backend (app_with_db.py):
+- **Flask App** mit CORS-Unterstützung
+- **SQLite-Datenbank** Integration
+- **Session-Management** für Login
+- **API-Endpunkte** für alle Funktionen
+- **Frontend-Serving** für React App
+
+### Frontend:
+- **React.js** mit modernem UI
+- **Axios** für API-Calls
+- **Responsive Design** für alle Geräte
+- **Zwei Dashboards:** Monteur und Büro
+
+### Datenbank-Schema:
+```sql
+-- Users Tabelle
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    name TEXT NOT NULL,
+    role TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Time Entries Tabelle
+CREATE TABLE time_entries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    clock_in TIMESTAMP,
+    clock_out TIMESTAMP,
+    break_start TIMESTAMP,
+    break_end TIMESTAMP,
+    location TEXT,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+);
+
+-- Orders Tabelle
+CREATE TABLE orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT,
+    customer TEXT,
+    location TEXT,
+    order_type TEXT,
+    priority TEXT,
+    status TEXT,
+    assigned_to INTEGER,
+    created_date DATE,
+    due_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (assigned_to) REFERENCES users (id)
+);
+
+-- Emergencies Tabelle
+CREATE TABLE emergencies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT,
+    location TEXT,
+    priority TEXT,
+    status TEXT,
+    assigned_to INTEGER,
+    reported_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (assigned_to) REFERENCES users (id)
+);
+
+-- Customers Tabelle
+CREATE TABLE customers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    contact_person TEXT,
+    email TEXT,
+    phone TEXT,
+    address TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## 📡 API-ENDPUNKTE
+===================
+
+### Authentication:
+- `POST /api/auth/login` - Benutzer anmelden
+- `POST /api/auth/logout` - Benutzer abmelden
+- `GET /api/auth/me` - Aktueller Benutzer
+
+### Monteur Endpoints:
+- `GET /api/monteur/time-entries` - Zeiteinträge abrufen
+- `POST /api/monteur/clock-in` - Einstempeln
+- `POST /api/monteur/clock-out` - Ausstempeln
+- `GET /api/monteur/current-status` - Aktueller Status
+- `GET /api/monteur/orders` - Aufträge abrufen
+- `PUT /api/monteur/orders/{id}/status` - Auftragsstatus ändern
+
+### Büro Endpoints:
+- `GET /api/buero/orders` - Alle Aufträge
+- `POST /api/buero/orders` - Auftrag erstellen
+- `PUT /api/buero/orders/{id}` - Auftrag aktualisieren
+- `GET /api/buero/emergencies` - Notfälle abrufen
+- `POST /api/buero/emergencies` - Notfall erstellen
+- `GET /api/buero/customers` - Kunden abrufen
+- `GET /api/buero/users` - Benutzer abrufen
+
+## 🔍 TROUBLESHOOTING
+=====================
+
+### Häufige Probleme:
+
+#### 1. "Application Error" auf Azure:
+```bash
+# Logs anzeigen
+az webapp log tail --resource-group zeiterfassung-rg --name zeiterfassung-app
+
+# App neu starten
+az webapp restart --resource-group zeiterfassung-rg --name zeiterfassung-app
+```
+
+#### 2. Login-Probleme:
+- Browser-Cache leeren (Ctrl+F5)
+- Inkognito-Modus verwenden
+- Hard Refresh durchführen
+
+#### 3. Deployment hängt:
+```bash
+# Deployment abbrechen
+az webapp deployment source config-zip --resource-group zeiterfassung-rg --name zeiterfassung-app --src zeiterfassung-deployment.zip --timeout 300
+```
+
+#### 4. Datenbank-Probleme:
+```bash
+# Datenbank neu initialisieren
+cd backend && python3 database_setup.py
+```
+
+### Debugging Commands:
+```bash
+# App Status prüfen
+curl https://zeiterfassung-app.azurewebsites.net/health
+
+# Login testen
+curl -X POST https://zeiterfassung-app.azurewebsites.net/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"monteur","password":"monteur"}'
+
+# App Settings anzeigen
+az webapp config appsettings list --resource-group zeiterfassung-rg --name zeiterfassung-app
+```
+
+## 📊 MONITORING
+================
+
+### Azure Portal:
+- **URL:** https://portal.azure.com
+- **Resource Group:** zeiterfassung-rg
+- **App Service:** zeiterfassung-app
+
+### Logs:
+- **Application Logs:** Azure Portal → App Service → Logs
+- **Live Logs:** `az webapp log tail --resource-group zeiterfassung-rg --name zeiterfassung-app`
+
+### Metriken:
+- **CPU Usage:** Azure Portal → App Service → Metrics
+- **Memory Usage:** Azure Portal → App Service → Metrics
+- **Response Time:** Azure Portal → App Service → Metrics
+
+## 🔄 UPDATE-PROZESS
+====================
+
+### Frontend Updates:
+```bash
+# 1. Frontend bauen
+cd frontend && npm run build
+
+# 2. Build in Backend kopieren
+cd ../backend && rm -rf build && cp -r ../frontend/build .
+
+# 3. ZIP erstellen
+zip -r ../zeiterfassung-update.zip .
+
+# 4. Deployen
+az webapp deploy --resource-group zeiterfassung-rg --name zeiterfassung-app --src-path zeiterfassung-update.zip
+```
+
+### Backend Updates:
+```bash
+# 1. ZIP erstellen
+cd backend && zip -r ../zeiterfassung-backend-update.zip .
+
+# 2. Deployen
+az webapp deploy --resource-group zeiterfassung-rg --name zeiterfassung-app --src-path zeiterfassung-backend-update.zip
+```
+
+### Datenbank-Updates:
+```bash
+# 1. Datenbank-Setup ausführen
+cd backend && python3 database_setup.py
+
+# 2. Mit Backend deployen
+zip -r ../zeiterfassung-db-update.zip .
+az webapp deploy --resource-group zeiterfassung-rg --name zeiterfassung-app --src-path zeiterfassung-db-update.zip
+```
+
+## 💰 KOSTEN
+============
+
+### Azure App Service (B1):
+- **Monatlich:** ~$13.14 USD
+- **Features:** 1 Core, 1.75 GB RAM, 10 GB Storage
+- **SLA:** 99.95%
+
+### Optimierung:
+- **Downscaling:** F1 (Free) für Entwicklung
+- **Upscaling:** B2/B3 für höhere Last
+- **Database:** Azure SQL Database für Produktion
+
+## 🔒 SICHERHEIT
+================
+
+### Implementierte Sicherheit:
+- **HTTPS:** Automatisch von Azure bereitgestellt
+- **Session-Management:** Flask-Sessions mit Secret Key
+- **CORS:** Konfiguriert für Azure Domain
+- **Input Validation:** Alle API-Endpunkte validiert
+
+### Empfohlene Verbesserungen:
+- **Password Hashing:** bcrypt für Passwörter
+- **JWT Tokens:** Statt Session-basiert
+- **Rate Limiting:** API Rate Limiting
+- **Logging:** Detailliertes Logging für Audit
+
+## 📞 SUPPORT
+==============
+
+### Bei Problemen:
+1. **Logs prüfen:** Azure Portal → App Service → Logs
+2. **Health Check:** https://zeiterfassung-app.azurewebsites.net/health
+3. **Backup wiederherstellen:** Aus Backup-Ordner deployen
+4. **Datenbank zurücksetzen:** database_setup.py ausführen
+
+### Kontakt:
+- **Azure Support:** Über Azure Portal
+- **Dokumentation:** Diese Datei als Referenz
+- **Backup:** Vollständige App in Backup-Ordner
+
+## ✅ STATUS
+============
+
+### ✅ Funktioniert:
+- [x] Login/Logout für beide Benutzer
+- [x] Monteur Dashboard mit Zeiterfassung
+- [x] Büro Dashboard mit Auftragsverwaltung
+- [x] Datenbank-Integration
+- [x] Responsive Design
+- [x] Azure Deployment
+- [x] API-Endpunkte
+- [x] Session-Management
+
+### 🔄 Geplant für Updates:
+- [ ] Password Hashing
+- [ ] Erweiterte Berichte
+- [ ] Email-Benachrichtigungen
+- [ ] Mobile App
+- [ ] Azure SQL Database
+- [ ] Backup-Automatisierung
+
+## 📝 CHANGELOG
+================
+
+### Version 1.0 (05.08.2025):
+- ✅ Vollständige App implementiert
+- ✅ Azure Deployment erfolgreich
+- ✅ Datenbank-Integration
+- ✅ Monteur und Büro Dashboards
+- ✅ Responsive Design
+- ✅ API-Endpunkte
+- ✅ Session-Management
+
+---
+
+**DOKUMENTATION ERSTELLT AM:** 05.08.2025 13:26 Uhr
+**VERSION:** 1.0
+**STATUS:** Produktiv auf Azure 

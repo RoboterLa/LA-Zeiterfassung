@@ -1,0 +1,287 @@
+================================================================================
+AZURE DATENBANK IMPLEMENTIERUNG - ZEITERFASSUNG APP
+================================================================================
+
+DATUM: 05.08.2025
+VERSION: 1.0
+STATUS: ✅ IMPLEMENTIERT UND BEREIT
+
+================================================================================
+1. ÜBERSICHT
+================================================================================
+
+Die App unterstützt jetzt zwei Modi:
+1. **Mock-Daten** (Fallback) - Funktioniert ohne Datenbank
+2. **Azure SQL Database** (Produktiv) - Persistente Datenbank
+
+================================================================================
+2. DATENBANK-KONFIGURATION
+================================================================================
+
+2.1 AZURE SQL DATABASE:
+- Server: zeiterfassung-sql.database.windows.net
+- Database: zeiterfassung-db
+- Username: sqladmin@zeiterfassung-sql
+- Password: [Environment Variable]
+
+2.2 ENVIRONMENT VARIABLES:
+```bash
+AZURE_SQL_SERVER=zeiterfassung-sql.database.windows.net
+AZURE_SQL_DATABASE=zeiterfassung-db
+AZURE_SQL_USERNAME=sqladmin@zeiterfassung-sql
+AZURE_SQL_PASSWORD=[IHR_PASSWORT]
+```
+
+================================================================================
+3. IMPLEMENTIERUNG
+================================================================================
+
+3.1 DATENBANK-KLASSE:
+- Datei: `database_azure.py`
+- Klasse: `AzureDatabase`
+- Features: Automatischer Fallback zu Mock-Daten
+
+3.2 APP-MODI:
+- `app_azure.py` - Mock-Daten (aktuell deployed)
+- `app_azure_with_db.py` - Azure SQL Database
+
+3.3 TABELLEN:
+```sql
+-- Users
+CREATE TABLE users (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(100) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    role VARCHAR(50) NOT NULL,
+    created_at DATETIME DEFAULT GETDATE()
+)
+
+-- Time Entries
+CREATE TABLE time_entries (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT FOREIGN KEY REFERENCES users(id),
+    clock_in DATETIME,
+    clock_out DATETIME,
+    location VARCHAR(255),
+    notes TEXT,
+    created_at DATETIME DEFAULT GETDATE()
+)
+
+-- Orders
+CREATE TABLE orders (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    customer VARCHAR(255),
+    location VARCHAR(255),
+    order_type VARCHAR(50),
+    priority VARCHAR(50),
+    status VARCHAR(50),
+    assigned_to INT FOREIGN KEY REFERENCES users(id),
+    created_date DATE,
+    due_date DATE,
+    created_at DATETIME DEFAULT GETDATE()
+)
+
+-- Emergencies
+CREATE TABLE emergencies (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    location VARCHAR(255),
+    priority VARCHAR(50),
+    status VARCHAR(50),
+    assigned_to INT FOREIGN KEY REFERENCES users(id),
+    reported_at DATETIME,
+    created_at DATETIME DEFAULT GETDATE()
+)
+```
+
+================================================================================
+4. DEPLOYMENT-OPTIONEN
+================================================================================
+
+4.1 MOCK-DATEN (AKTUELL):
+```bash
+# Verwendet app_azure.py
+gunicorn --bind=0.0.0.0 --timeout 600 app_azure:app
+```
+
+4.2 AZURE SQL DATABASE:
+```bash
+# Verwendet app_azure_with_db.py
+gunicorn --bind=0.0.0.0 --timeout 600 app_azure_with_db:app
+```
+
+4.3 ENVIRONMENT VARIABLES SETZEN:
+```bash
+az webapp config appsettings set \
+  --resource-group zeiterfassung-rg \
+  --name zeiterfassung-app \
+  --settings AZURE_SQL_PASSWORD="IHR_PASSWORT"
+```
+
+================================================================================
+5. MIGRATION VON MOCK ZU DATENBANK
+================================================================================
+
+5.1 SCHRITT 1: PASSWORD SETZEN:
+```bash
+az webapp config appsettings set \
+  --resource-group zeiterfassung-rg \
+  --name zeiterfassung-app \
+  --settings AZURE_SQL_PASSWORD="IHR_PASSWORT"
+```
+
+5.2 SCHRITT 2: APP MIT DATENBANK DEPLOYEN:
+```bash
+# app_azure_with_db.py verwenden
+cp app_azure_with_db.py app_azure.py
+
+# Deployment
+cd backend
+zip -r ../zeiterfassung-with-db.zip . -x "__pycache__/*" "*.db" "venv/*"
+az webapp deploy --resource-group zeiterfassung-rg --name zeiterfassung-app --src-path ../zeiterfassung-with-db.zip
+```
+
+5.3 SCHRITT 3: STARTUP-COMMAND ANPASSEN:
+```bash
+az webapp config set \
+  --resource-group zeiterfassung-rg \
+  --name zeiterfassung-app \
+  --startup-file "gunicorn --bind=0.0.0.0 --timeout 600 app_azure:app"
+```
+
+================================================================================
+6. FEATURES
+================================================================================
+
+6.1 AUTOMATISCHER FALLBACK:
+- Wenn keine Datenbank-Verbindung: Mock-Daten
+- Wenn Datenbank-Verbindung: Echte Daten
+- Keine App-Ausfälle bei Datenbank-Problemen
+
+6.2 PERSISTENTE DATEN:
+- Zeiterfassungen bleiben nach Re-Deployment
+- Aufträge werden gespeichert
+- Notfälle werden gespeichert
+- Benutzer-Daten bleiben erhalten
+
+6.3 SCALIERBARKEIT:
+- Azure SQL Database skaliert automatisch
+- Automatische Backups
+- Hochverfügbarkeit
+
+================================================================================
+7. TESTING
+================================================================================
+
+7.1 HEALTH CHECK:
+```bash
+curl https://zeiterfassung-app.azurewebsites.net/health
+# Antwort: {"database": "connected"} oder {"database": "mock"}
+```
+
+7.2 DATENBANK-TEST:
+```bash
+# Login testen
+curl -X POST https://zeiterfassung-app.azurewebsites.net/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"monteur","password":"monteur"}'
+```
+
+7.3 ZEITERFASSUNG-TEST:
+```bash
+# Clock-in testen
+curl -X POST https://zeiterfassung-app.azurewebsites.net/api/monteur/clock-in \
+  -H "Content-Type: application/json" \
+  -d '{"location":"Test Location"}'
+```
+
+================================================================================
+8. SICHERHEIT
+================================================================================
+
+8.1 DATENBANK-SICHERHEIT:
+- Passwort in Environment Variables
+- Verschlüsselte Verbindung
+- Azure Firewall-Regeln
+- Automatische Backups
+
+8.2 APP-SICHERHEIT:
+- Session-Management
+- Input Validation
+- SQL Injection Protection
+- CORS-Konfiguration
+
+================================================================================
+9. MONITORING
+================================================================================
+
+9.1 AZURE MONITORING:
+```bash
+# Database Performance
+az sql db show --resource-group zeiterfassung-rg --server zeiterfassung-sql --name zeiterfassung-db
+
+# App Logs
+az webapp log tail --resource-group zeiterfassung-rg --name zeiterfassung-app
+```
+
+9.2 DATENBANK-LOGS:
+- Azure Portal → SQL Database → Query Performance Insight
+- Azure Portal → SQL Database → Auditing
+
+================================================================================
+10. BACKUP UND WIEDERHERSTELLUNG
+================================================================================
+
+10.1 AUTOMATISCHE BACKUPS:
+- Azure SQL Database: Automatische Backups alle 7 Tage
+- Point-in-time Restore verfügbar
+- Geo-redundante Backups
+
+10.2 MANUELLE BACKUPS:
+```bash
+# Database exportieren
+az sql db export \
+  --resource-group zeiterfassung-rg \
+  --server zeiterfassung-sql \
+  --name zeiterfassung-db \
+  --storage-uri "https://storageaccount.blob.core.windows.net/container/backup.bacpac" \
+  --admin-user sqladmin \
+  --admin-password "PASSWORD"
+```
+
+================================================================================
+11. KOSTEN
+================================================================================
+
+11.1 AZURE SQL DATABASE:
+- Basic Tier: ~5€/Monat
+- Standard Tier: ~30€/Monat
+- Premium Tier: ~150€/Monat
+
+11.2 EMPFEHLUNG:
+- Entwicklung: Basic Tier
+- Produktion: Standard Tier
+- Hochlast: Premium Tier
+
+================================================================================
+12. NÄCHSTE SCHRITTE
+================================================================================
+
+12.1 SOFORT:
+- Passwort für Datenbank setzen
+- App mit Datenbank deployen
+- Testing durchführen
+
+12.2 ZUKÜNFTIG:
+- Password Hashing implementieren
+- Erweiterte Berichte
+- Email-Benachrichtigungen
+- Mobile App
+
+================================================================================
+ENDE DER DOKUMENTATION
+================================================================================ 
