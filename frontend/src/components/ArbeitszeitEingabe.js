@@ -32,7 +32,31 @@ const ArbeitszeitEingabe = ({ user }) => {
     location: '',
     overtime_hours: 0,
     meal_allowance: false,
-    notes: ''
+    notes: '',
+    // Neue Felder für Urlaub/Krankmeldung
+    leave_type: '',
+    leave_reason: '',
+    sick_note: false,
+    approval_status: 'pending'
+  });
+
+  // Neue States für erweiterte Funktionen
+  const [showLeaveForm, setShowLeaveForm] = useState(false);
+  const [showSickForm, setShowSickForm] = useState(false);
+  const [leaveForm, setLeaveForm] = useState({
+    start_date: new Date().toISOString().split('T')[0],
+    end_date: new Date().toISOString().split('T')[0],
+    leave_type: 'vacation',
+    reason: '',
+    approval_status: 'pending'
+  });
+
+  const [sickForm, setSickForm] = useState({
+    start_date: new Date().toISOString().split('T')[0],
+    end_date: new Date().toISOString().split('T')[0],
+    reason: '',
+    doctor_note: false,
+    approval_status: 'pending'
   });
 
   // Statistiken
@@ -186,7 +210,12 @@ const ArbeitszeitEingabe = ({ user }) => {
       location: '',
       overtime_hours: 0,
       meal_allowance: false,
-      notes: ''
+      notes: '',
+      // Neue Felder für Urlaub/Krankmeldung
+      leave_type: '',
+      leave_reason: '',
+      sick_note: false,
+      approval_status: 'pending'
     });
     setEditingEntry(null);
     setShowForm(false);
@@ -288,7 +317,12 @@ const ArbeitszeitEingabe = ({ user }) => {
       location: entry.location || '',
       overtime_hours: entry.overtime_hours || 0,
       meal_allowance: entry.meal_allowance || false,
-      notes: entry.notes || ''
+      notes: entry.notes || '',
+      // Neue Felder für Urlaub/Krankmeldung
+      leave_type: entry.leave_type || '',
+      leave_reason: entry.leave_reason || '',
+      sick_note: entry.sick_note || false,
+      approval_status: entry.approval_status || 'pending'
     });
     setShowForm(true);
   };
@@ -402,6 +436,68 @@ const ArbeitszeitEingabe = ({ user }) => {
     }, 0);
   };
 
+  /**
+   * Behandelt Urlaub-Submit
+   */
+  const handleLeaveSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/monteur/leave-requests`, leaveForm, {
+        withCredentials: true
+      });
+      if (response.data.success) {
+        setMessage('Urlaub erfolgreich gemeldet');
+        setShowLeaveForm(false);
+        setLeaveForm({
+          start_date: new Date().toISOString().split('T')[0],
+          end_date: new Date().toISOString().split('T')[0],
+          leave_type: 'vacation',
+          reason: '',
+          approval_status: 'pending'
+        });
+        loadTimeEntries();
+        loadStats();
+      }
+    } catch (error) {
+      setMessage('Fehler beim Melden des Urlaubs');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Behandelt Krankmeldung-Submit
+   */
+  const handleSickSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/monteur/sick-requests`, sickForm, {
+        withCredentials: true
+      });
+      if (response.data.success) {
+        setMessage('Krankmeldung erfolgreich eingereicht');
+        setShowSickForm(false);
+        setSickForm({
+          start_date: new Date().toISOString().split('T')[0],
+          end_date: new Date().toISOString().split('T')[0],
+          reason: '',
+          doctor_note: false,
+          approval_status: 'pending'
+        });
+        loadTimeEntries();
+        loadStats();
+      }
+    } catch (error) {
+      setMessage('Fehler beim Einreichen der Krankmeldung');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="arbeitszeit-page">
       {/* Header */}
@@ -471,6 +567,48 @@ const ArbeitszeitEingabe = ({ user }) => {
               <div className="stat-label">Verpflegungsmehraufwand</div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Schnellaktionen */}
+      <div className="quick-actions-section">
+        <h3>Schnellaktionen</h3>
+        <div className="quick-actions-grid">
+          <button 
+            onClick={() => setShowForm(true)}
+            className="quick-action-btn primary"
+          >
+            <span className="action-icon">+</span>
+            <span className="action-label">Manueller Eintrag</span>
+          </button>
+          <button 
+            onClick={() => {/* TODO: Einstempeln */}}
+            className="quick-action-btn secondary"
+          >
+            <span className="action-icon">⏰</span>
+            <span className="action-label">Einstempeln</span>
+          </button>
+          <button 
+            onClick={() => {/* TODO: Ausstempeln */}}
+            className="quick-action-btn secondary"
+          >
+            <span className="action-icon">⏹️</span>
+            <span className="action-label">Ausstempeln</span>
+          </button>
+          <button 
+            onClick={() => setShowLeaveForm(true)}
+            className="quick-action-btn vacation"
+          >
+            <span className="action-icon">🏖️</span>
+            <span className="action-label">Urlaub melden</span>
+          </button>
+          <button 
+            onClick={() => setShowSickForm(true)}
+            className="quick-action-btn sick"
+          >
+            <span className="action-icon">🏥</span>
+            <span className="action-label">Krankmeldung</span>
+          </button>
         </div>
       </div>
 
@@ -705,6 +843,193 @@ const ArbeitszeitEingabe = ({ user }) => {
                   type="button" 
                   className="btn btn-secondary"
                   onClick={resetForm}
+                  disabled={loading}
+                >
+                  Abbrechen
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Urlaub Formular */}
+      {showLeaveForm && (
+        <div className="form-overlay">
+          <div className="form-modal">
+            <div className="form-header">
+              <h2>Urlaub melden</h2>
+              <button 
+                className="close-btn"
+                onClick={() => setShowLeaveForm(false)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <form onSubmit={handleLeaveSubmit} className="leave-form">
+              <div className="form-grid">
+                <div className="form-group">
+                  <label htmlFor="leave_start_date">Startdatum *</label>
+                  <input
+                    type="date"
+                    id="leave_start_date"
+                    name="start_date"
+                    value={leaveForm.start_date}
+                    onChange={(e) => setLeaveForm({...leaveForm, start_date: e.target.value})}
+                    required
+                    className="form-input"
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="leave_end_date">Enddatum *</label>
+                  <input
+                    type="date"
+                    id="leave_end_date"
+                    name="end_date"
+                    value={leaveForm.end_date}
+                    onChange={(e) => setLeaveForm({...leaveForm, end_date: e.target.value})}
+                    required
+                    className="form-input"
+                  />
+                </div>
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="leave_type">Urlaubsart *</label>
+                <select
+                  id="leave_type"
+                  name="leave_type"
+                  value={leaveForm.leave_type}
+                  onChange={(e) => setLeaveForm({...leaveForm, leave_type: e.target.value})}
+                  required
+                  className="form-input"
+                >
+                  <option value="vacation">Urlaub</option>
+                  <option value="sick_leave">Krankheitsurlaub</option>
+                  <option value="personal_leave">Persönliche Tage</option>
+                  <option value="training">Schulung</option>
+                  <option value="other">Sonstiges</option>
+                </select>
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="leave_reason">Grund</label>
+                <textarea
+                  id="leave_reason"
+                  name="reason"
+                  value={leaveForm.reason}
+                  onChange={(e) => setLeaveForm({...leaveForm, reason: e.target.value})}
+                  placeholder="Grund für den Urlaub..."
+                  className="form-input"
+                  rows="3"
+                />
+              </div>
+              
+              <div className="form-actions">
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                  disabled={loading}
+                >
+                  {loading ? 'Speichere...' : 'Urlaub melden'}
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary"
+                  onClick={() => setShowLeaveForm(false)}
+                  disabled={loading}
+                >
+                  Abbrechen
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Krankmeldung Formular */}
+      {showSickForm && (
+        <div className="form-overlay">
+          <div className="form-modal">
+            <div className="form-header">
+              <h2>Krankmeldung</h2>
+              <button 
+                className="close-btn"
+                onClick={() => setShowSickForm(false)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <form onSubmit={handleSickSubmit} className="sick-form">
+              <div className="form-grid">
+                <div className="form-group">
+                  <label htmlFor="sick_start_date">Startdatum *</label>
+                  <input
+                    type="date"
+                    id="sick_start_date"
+                    name="start_date"
+                    value={sickForm.start_date}
+                    onChange={(e) => setSickForm({...sickForm, start_date: e.target.value})}
+                    required
+                    className="form-input"
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="sick_end_date">Enddatum *</label>
+                  <input
+                    type="date"
+                    id="sick_end_date"
+                    name="end_date"
+                    value={sickForm.end_date}
+                    onChange={(e) => setSickForm({...sickForm, end_date: e.target.value})}
+                    required
+                    className="form-input"
+                  />
+                </div>
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="sick_reason">Grund</label>
+                <textarea
+                  id="sick_reason"
+                  name="reason"
+                  value={sickForm.reason}
+                  onChange={(e) => setSickForm({...sickForm, reason: e.target.value})}
+                  placeholder="Grund für die Krankmeldung..."
+                  className="form-input"
+                  rows="3"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    name="doctor_note"
+                    checked={sickForm.doctor_note}
+                    onChange={(e) => setSickForm({...sickForm, doctor_note: e.target.checked})}
+                    className="checkbox-input"
+                  />
+                  <span className="checkbox-text">Arztbesuch geplant</span>
+                </label>
+              </div>
+              
+              <div className="form-actions">
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                  disabled={loading}
+                >
+                  {loading ? 'Speichere...' : 'Krankmeldung einreichen'}
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary"
+                  onClick={() => setShowSickForm(false)}
                   disabled={loading}
                 >
                   Abbrechen

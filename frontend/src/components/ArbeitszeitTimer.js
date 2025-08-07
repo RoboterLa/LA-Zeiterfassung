@@ -13,10 +13,10 @@ const ArbeitszeitTimer = ({ onTimeEntrySaved }) => {
   const [message, setMessage] = useState('');
 
   // Timer-States
-  const [workStartTime] = useState(null);
-  const [breakStartTime] = useState(null);
-  const [isWorking] = useState(false);
-  const [isOnBreak] = useState(false);
+  const [workStartTime, setWorkStartTime] = useState(null);
+  const [breakStartTime, setBreakStartTime] = useState(null);
+  const [isWorking, setIsWorking] = useState(false);
+  const [isOnBreak, setIsOnBreak] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
