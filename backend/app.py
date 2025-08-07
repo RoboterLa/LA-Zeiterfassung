@@ -14,8 +14,18 @@ MOCK_USERS = [
 ]
 
 MOCK_TIME_ENTRIES = [
-    {'id': 1, 'user_id': 1, 'clock_in': '08:00:00', 'clock_out': '17:00:00', 'location': 'Hauptstraße 15, München', 'notes': 'Wartung Aufzug'},
-    {'id': 2, 'user_id': 1, 'clock_in': '07:30:00', 'clock_out': None, 'location': 'Marienplatz 1, München', 'notes': 'Reparatur'}
+    {'id': 1, 'user_id': 1, 'clock_in': '08:00:00', 'clock_out': '17:00:00', 'location': 'Hauptstraße 15, München', 'notes': 'Wartung Aufzug', 'work_type': 'regular', 'break_duration': 30, 'overtime_hours': 0, 'meal_allowance': True, 'approval_status': 'approved'},
+    {'id': 2, 'user_id': 1, 'clock_in': '07:30:00', 'clock_out': None, 'location': 'Marienplatz 1, München', 'notes': 'Reparatur', 'work_type': 'regular', 'break_duration': 0, 'overtime_hours': 0, 'meal_allowance': False, 'approval_status': 'pending'}
+]
+
+MOCK_LEAVE_REQUESTS = [
+    {'id': 1, 'user_id': 1, 'start_date': '2025-02-01', 'end_date': '2025-02-05', 'leave_type': 'vacation', 'reason': 'Urlaub', 'approval_status': 'pending'},
+    {'id': 2, 'user_id': 1, 'start_date': '2025-01-15', 'end_date': '2025-01-16', 'leave_type': 'sick_leave', 'reason': 'Krank', 'approval_status': 'approved'}
+]
+
+MOCK_SICK_REQUESTS = [
+    {'id': 1, 'user_id': 1, 'start_date': '2025-01-15', 'end_date': '2025-01-16', 'reason': 'Grippe', 'doctor_note': True, 'approval_status': 'approved'},
+    {'id': 2, 'user_id': 1, 'start_date': '2025-02-10', 'end_date': '2025-02-12', 'reason': 'Migräne', 'doctor_note': False, 'approval_status': 'pending'}
 ]
 
 MOCK_ORDERS = [
@@ -105,6 +115,148 @@ def get_time_entries():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/monteur/work-time-entries')
+def get_work_time_entries():
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({'success': False, 'error': 'Nicht angemeldet'}), 401
+    
+    try:
+        entries = [e for e in MOCK_TIME_ENTRIES if e['user_id'] == user_id]
+        return jsonify({'success': True, 'entries': entries})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/monteur/work-time-entries', methods=['POST'])
+def create_work_time_entry():
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({'success': False, 'error': 'Nicht angemeldet'}), 401
+    
+    try:
+        data = request.get_json()
+        new_entry = {
+            'id': len(MOCK_TIME_ENTRIES) + 1,
+            'user_id': user_id,
+            'date': data.get('date'),
+            'start_time': data.get('start_time'),
+            'end_time': data.get('end_time'),
+            'work_type': data.get('work_type', 'regular'),
+            'break_duration': data.get('break_duration', 0),
+            'location': data.get('location', ''),
+            'description': data.get('description', ''),
+            'overtime_hours': data.get('overtime_hours', 0),
+            'meal_allowance': data.get('meal_allowance', False),
+            'notes': data.get('notes', ''),
+            'approval_status': 'pending'
+        }
+        MOCK_TIME_ENTRIES.append(new_entry)
+        return jsonify({'success': True, 'entry': new_entry})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/monteur/work-time-entries/<int:entry_id>', methods=['PUT'])
+def update_work_time_entry(entry_id):
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({'success': False, 'error': 'Nicht angemeldet'}), 401
+    
+    try:
+        data = request.get_json()
+        entry = next((e for e in MOCK_TIME_ENTRIES if e['id'] == entry_id and e['user_id'] == user_id), None)
+        
+        if not entry:
+            return jsonify({'success': False, 'error': 'Eintrag nicht gefunden'}), 404
+        
+        entry.update(data)
+        return jsonify({'success': True, 'entry': entry})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/monteur/work-time-entries/<int:entry_id>', methods=['DELETE'])
+def delete_work_time_entry(entry_id):
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({'success': False, 'error': 'Nicht angemeldet'}), 401
+    
+    try:
+        global MOCK_TIME_ENTRIES
+        MOCK_TIME_ENTRIES = [e for e in MOCK_TIME_ENTRIES if not (e['id'] == entry_id and e['user_id'] == user_id)]
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/monteur/work-stats')
+def get_work_stats():
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({'success': False, 'error': 'Nicht angemeldet'}), 401
+    
+    try:
+        user_entries = [e for e in MOCK_TIME_ENTRIES if e['user_id'] == user_id]
+        today_hours = sum(8 for e in user_entries if e.get('date') == datetime.now().strftime('%Y-%m-%d'))
+        week_hours = sum(8 for e in user_entries)
+        month_hours = sum(8 for e in user_entries)
+        overtime = sum(e.get('overtime_hours', 0) for e in user_entries)
+        meal_allowance = sum(1 for e in user_entries if e.get('meal_allowance'))
+        
+        stats = {
+            'todayHours': today_hours,
+            'weekHours': week_hours,
+            'monthHours': month_hours,
+            'overtime': overtime,
+            'vacationDays': 25,
+            'sickDays': 0,
+            'mealAllowance': meal_allowance
+        }
+        return jsonify({'success': True, 'stats': stats})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/monteur/leave-requests', methods=['POST'])
+def create_leave_request():
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({'success': False, 'error': 'Nicht angemeldet'}), 401
+    
+    try:
+        data = request.get_json()
+        new_request = {
+            'id': len(MOCK_LEAVE_REQUESTS) + 1,
+            'user_id': user_id,
+            'start_date': data.get('start_date'),
+            'end_date': data.get('end_date'),
+            'leave_type': data.get('leave_type'),
+            'reason': data.get('reason', ''),
+            'approval_status': 'pending'
+        }
+        MOCK_LEAVE_REQUESTS.append(new_request)
+        return jsonify({'success': True, 'request': new_request})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/monteur/sick-requests', methods=['POST'])
+def create_sick_request():
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({'success': False, 'error': 'Nicht angemeldet'}), 401
+    
+    try:
+        data = request.get_json()
+        new_request = {
+            'id': len(MOCK_SICK_REQUESTS) + 1,
+            'user_id': user_id,
+            'start_date': data.get('start_date'),
+            'end_date': data.get('end_date'),
+            'reason': data.get('reason', ''),
+            'doctor_note': data.get('doctor_note', False),
+            'approval_status': 'pending'
+        }
+        MOCK_SICK_REQUESTS.append(new_request)
+        return jsonify({'success': True, 'request': new_request})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/monteur/clock-in', methods=['POST'])
 def clock_in():
     user_id = session.get('user_id')
@@ -187,6 +339,22 @@ def update_order_status(order_id):
             'success': True,
             'message': f'Status auf {new_status} geändert'
         })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/buero/dashboard-stats')
+def get_buero_dashboard_stats():
+    try:
+        stats = {
+            'totalOrders': len(MOCK_ORDERS),
+            'openOrders': len([o for o in MOCK_ORDERS if o['status'] == 'open']),
+            'completedOrders': len([o for o in MOCK_ORDERS if o['status'] == 'completed']),
+            'activeMonteurs': 5,
+            'totalMonteurs': 8,
+            'emergencies': len(MOCK_EMERGENCIES),
+            'totalCustomers': 12
+        }
+        return jsonify({'success': True, 'stats': stats})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
